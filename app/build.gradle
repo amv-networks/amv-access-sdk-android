@@ -43,10 +43,6 @@ android {
             dirs 'libs'
         }
     }
-
-    configurations.all {
-        resolutionStrategy.force 'com.google.code.findbugs:jsr305:2.0.1'
-    }
 }
 
 dependencies {
@@ -64,16 +60,8 @@ dependencies {
     annotationProcessor "com.jakewharton:butterknife-compiler:${butterknifeVersion}"
 
     testImplementation "junit:junit:${junitVersion}"
-    androidTestImplementation('com.android.support.test:runner:1.0.1') {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-    androidTestImplementation('com.android.support.test:rules:1.0.1') {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-    androidTestImplementation("com.android.support.test.espresso:espresso-core:${espressoVersion}") {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
-    androidTestImplementation("com.android.support.test.espresso:espresso-intents:${espressoVersion}") {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    }
+    androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
+    androidTestImplementation "com.android.support.test:rules:${supportTestVersion}"
+    androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"
+    androidTestImplementation "com.android.support.test.espresso:espresso-intents:${espressoVersion}"
 }
