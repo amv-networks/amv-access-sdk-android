@@ -27,4 +27,15 @@ allprojects {
         jcenter()
         google()
     }
+
+    project.ext {
+        buildToolsVersion = '26.0.2'
+
+        minSdkVersion = 23
+        targetSdkVersion = 26
+        compileSdkVersion = 26
+
+        versionCode = 1
+        versionName = '1.0'
+    }
 }

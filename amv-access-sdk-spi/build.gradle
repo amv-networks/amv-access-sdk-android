@@ -1,18 +1,19 @@
 
 apply plugin: 'com.github.dcendents.android-maven' // needed for jitpack
 
-group = 'com.github.amvnetworks.amv-access-sdk-android'
+group = 'com.github.amv-networks.amv-access-sdk-android'
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion project.ext.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 23
-        targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+
+        versionCode project.ext.versionCode
+        versionName project.ext.versionName
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
