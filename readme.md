@@ -16,13 +16,12 @@ git clone https://github.com/amv-networks/amv-access-sdk-android.git
 ```
 
 ### ide
-* Open the project in Android Studio
-* minSdkVersion for android is 23
-* gradle version 4.3
-
 As this project uses [Project Lombok](https://projectlombok.org/) make sure you have the
 [IntelliJ Lombok Plugin](https://github.com/mplushnikov/lombok-intellij-plugin) installed and
 annotation processing enabled.
+
+* minSdkVersion for android is 23
+* gradle version 4.3.1
 
 ## modules
 This repository currently consists of three modules.
@@ -45,8 +44,7 @@ In order to integrate the sdk into your own app you need two things:
 - an implementation of the `amv-access-sdk-spi` module
 
 Currently there is only one such implementation which is `amv-hm-access-sdk`.
-You can always refer to the example application which can be found in the `app/` directory.
-Also, you can contact a developer if you need further information.
+You can always refer to the example application or contact a developer if you need further information.
 
 **Step 1.** Add the following lines to your root `build.gradle` at the end of repositories:
 ```groovy
