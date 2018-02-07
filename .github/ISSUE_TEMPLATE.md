@@ -9,3 +9,5 @@
 ### Access SDK version
 
 ### Android version
+
+### Phone Model
