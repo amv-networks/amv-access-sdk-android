@@ -50,30 +50,30 @@ android {
 }
 
 dependencies {
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
-    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
-
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation(name: 'hmkit-android', version: '1.0.11', ext: 'aar')
 
     implementation project(':amv-hm-access-sdk')
 
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    implementation 'com.jakewharton:butterknife:8.5.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.6.0'
+    debugImplementation "com.squareup.leakcanary:leakcanary-android:${leakcanaryVersion}"
+    releaseImplementation "com.squareup.leakcanary:leakcanary-android-no-op:${leakcanaryVersion}"
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation('com.android.support.test:runner:0.5') {
+    implementation 'com.android.support:appcompat-v7:27.0.2'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation "com.jakewharton:butterknife:${butterknifeVersion}"
+    annotationProcessor "com.jakewharton:butterknife-compiler:${butterknifeVersion}"
+
+    testImplementation "junit:junit:${junitVersion}"
+    androidTestImplementation('com.android.support.test:runner:1.0.1') {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
-    androidTestImplementation('com.android.support.test:rules:0.5') {
+    androidTestImplementation('com.android.support.test:rules:1.0.1') {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
-    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2') {
+    androidTestImplementation("com.android.support.test.espresso:espresso-core:${espressoVersion}") {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
-    androidTestImplementation('com.android.support.test.espresso:espresso-intents:2.2.2') {
+    androidTestImplementation("com.android.support.test.espresso:espresso-intents:${espressoVersion}") {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
 }

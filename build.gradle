@@ -37,5 +37,15 @@ allprojects {
 
         versionCode = 1
         versionName = '1.0'
+
+        guavaVersion = '24.0-android'
+        rxAndroidVersion = '2.0.1'
+        rxJavaVersion = '2.1.9'
+        concealVersion = '2.0.1@aar'
+        lombokVersion = '1.16.16'
+        junitVersion = '4.12'
+        leakcanaryVersion = '1.5.4'
+        butterknifeVersion = '8.8.1'
+        espressoVersion = '3.0.1'
     }
 }
