@@ -24,10 +24,10 @@ annotation processing enabled.
 * gradle version 4.3.1
 
 ## modules
-This repository currently consists of three modules.
+This repository currently consists of two libraries.
 
 ### amv-access-sdk-spi
-A module consisting of interfaces and simple base classes which represents the basic requirements
+A module consisting interfaces and simple base classes which represent the basic requirements
 and concepts needed in concrete implementations.
 
 ### amv-hm-access-sdk
@@ -73,8 +73,8 @@ allprojects {
 ```groovy
 dependencies {
     ...
-    implementation(name: 'hmkit-android', version: '1.0.11', ext: 'aar')
-    implementation 'com.github.amv-networks.amv-access-sdk-android:amv-hm-access-sdk:v0.0.1'
+    implementation(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
+    implementation "com.github.amv-networks.amv-access-sdk-android:amv-hm-access-sdk:${amvAccessSdkVersion}"
 }
 ```
 
