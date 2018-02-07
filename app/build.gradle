@@ -55,6 +55,8 @@ dependencies {
 
     implementation project(':amv-hm-access-sdk')
 
+    implementation 'com.android.volley:volley:1.1.0'
+
     debugImplementation "com.squareup.leakcanary:leakcanary-android:${leakcanaryVersion}"
     releaseImplementation "com.squareup.leakcanary:leakcanary-android-no-op:${leakcanaryVersion}"
 
