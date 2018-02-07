@@ -1,6 +1,5 @@
-[![Build Status](https://travis-ci.org/amvnetworks/amv-access-sdk-android.svg?branch=master)](https://travis-ci.org/amvnetworks/amv-access-sdk-android)
-[![Jitpack](https://jitpack.io/v/amvnetworks/amv-access-sdk-android.svg)](https://jitpack.io/#amvnetworks/amv-access-sdk-android)
-
+[![Build Status](https://travis-ci.org/amv-networks/amv-access-sdk-android.svg?branch=master)](https://travis-ci.org/amv-networks/amv-access-sdk-android)
+[![Jitpack](https://jitpack.io/v/amv-networks/amv-access-sdk-android.svg)](https://jitpack.io/#amv-networks/amv-access-sdk-android)
 
 amv-access-sdk-android
 ======================
@@ -8,7 +7,7 @@ amv-access-sdk-android
 ## getting started
 ### setup
 ```bash
-git clone https://github.com/amvnetworks/amv-access-sdk-android.git
+git clone https://github.com/amv-networks/amv-access-sdk-android.git
 ```
 
 ### build
@@ -16,7 +15,7 @@ git clone https://github.com/amvnetworks/amv-access-sdk-android.git
 ./gradlew clean build
 ```
 
-#### ide
+### ide
 * Open the project in Android Studio
 * minSdkVersion for android is 23
 * gradle version 4.3
@@ -35,13 +34,10 @@ and concepts needed in concrete implementations.
 ### amv-hm-access-sdk
 The first (and currently only) implementation of `amv-access-sdk-spi`.
 
-### app
-A working example app and demo implementation which uses `amv-hm-access-sdk`. It can be used
-to get started quickly with your own app.
-
 ## example app
-To successfully start the example app you have to add a file named `application.properties` in `app/src/main/assets`.
-See the file `application.properties.template` and change the values to your needs.
+The repository [amv-access-sdk-android-reference-app](https://github.com/amv-networks/amv-access-sdk-android-reference-app) 
+contains a working example app and demo implementation which uses `amv-hm-access-sdk`. It can be used
+to get started quickly with your own app.
 
 ## integration
 In order to integrate the sdk into your own app you need two things:
@@ -80,7 +76,7 @@ allprojects {
 dependencies {
     ...
     implementation(name: 'hmkit-android', version: '1.0.11', ext: 'aar')
-    implementation 'com.github.amvnetworks.amv-access-sdk-android:amv-hm-access-sdk:v0.0.1'
+    implementation 'com.github.amv-networks.amv-access-sdk-android:amv-hm-access-sdk:v0.0.1'
 }
 ```
 
