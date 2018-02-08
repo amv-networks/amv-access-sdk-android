@@ -19,6 +19,7 @@ import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.error.AccessSdkException;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.Observable;
@@ -107,10 +108,12 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     public Observable<Boolean> terminate() {
         Observable<Boolean> sendDisconnectCommandAndContinueOnError = this
                 .sendCommand(this.commandFactory.disconnect())
+                .timeout(1, TimeUnit.SECONDS)
                 .onErrorReturnItem(true);
 
         return sendDisconnectCommandAndContinueOnError
                 .flatMap(foo -> this.broadcaster.terminate())
+                .timeout(1, TimeUnit.SECONDS)
                 .doOnError(e -> terminateInternal())
                 .doOnNext(next -> terminateInternal());
     }
