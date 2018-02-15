@@ -1,0 +1,10 @@
+org.amv.access.sdk.spi
+org.amv.access.sdk.spi.bluetooth
+org.amv.access.sdk.spi.bluetooth.impl
+org.amv.access.sdk.spi.certificate
+org.amv.access.sdk.spi.certificate.impl
+org.amv.access.sdk.spi.communication
+org.amv.access.sdk.spi.communication.impl
+org.amv.access.sdk.spi.error
+org.amv.access.sdk.spi.vehicle
+org.amv.access.sdk.spi.vehicle.impl

@@ -29,6 +29,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    task javadoc(type: Javadoc) {
+        source = android.sourceSets.main.java.srcDirs
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        destinationDir = file("../docs/${project.name}/javadoc")
+        exclude 'lombok.config'
+        failOnError = false
+        options.noTimestamp = true
+        options.locale 'en_US'
+    }
 }
 
 dependencies {

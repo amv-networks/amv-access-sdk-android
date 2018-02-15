@@ -1,0 +1,9 @@
+org.amv.access.sdk.hm
+org.amv.access.sdk.hm.bluetooth
+org.amv.access.sdk.hm.certificate
+org.amv.access.sdk.hm.communication
+org.amv.access.sdk.hm.crypto
+org.amv.access.sdk.hm.error
+org.amv.access.sdk.hm.secure
+org.amv.access.sdk.hm.util
+org.amv.access.sdk.hm.vehicle
