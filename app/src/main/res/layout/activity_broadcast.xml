@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,45 +11,39 @@
         android:layout_height="@dimen/navigation_bar_height"
         android:background="@color/lightClay">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:gravity="center_vertical"
             android:paddingLeft="10dp"
             android:paddingRight="10dp">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/title_button"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_centerInParent="true"
-                android:gravity="center_vertical">
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:background="#00000000"
+                android:textAlignment="center"
+                android:textColor="#ffff"
+                android:textSize="16sp"
+                android:textStyle="normal" />
+        </LinearLayout>
 
-                <TextView
-                    android:id="@+id/title_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:background="#00000000"
-                    android:textAlignment="center"
-                    android:textColor="#ffff"
-                    android:textSize="16sp"
-                    android:textStyle="normal" />
-            </LinearLayout>
-
-        </RelativeLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_alignParentBottom="true"
-            android:background="@color/edge">
-        </LinearLayout>
+            android:background="@color/edge" />
     </RelativeLayout>
 
     <ProgressBar
+        android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/progress_bar"
         android:layout_centerInParent="true"
-        android:alpha="0"/>
+        android:alpha="0" />
 
     <TextView
         android:id="@+id/progress_bar_subtext"
@@ -58,137 +51,155 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/progress_bar"
         android:layout_centerHorizontal="true" />
-    
+
     <RelativeLayout
         android:id="@+id/connected_view"
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
         android:visibility="gone">
+
         <LinearLayout
-            android:layout_marginTop="@dimen/navigation_bar_height"
-            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="200dp">
+            android:layout_height="200dp"
+            android:layout_marginTop="@dimen/navigation_bar_height"
+            android:orientation="vertical">
+
             <LinearLayout
-                android:layout_weight="1"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
                 <LinearLayout
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/charging_plug"/>
+                        android:text="@string/charging_plug" />
+
                     <android.support.v4.widget.Space
                         android:layout_width="match_parent"
-                        android:layout_height="10dp"/>
+                        android:layout_height="10dp" />
+
                     <Switch
-                        style="@style/SwitchCompatStyle"
                         android:id="@+id/charging_plug_switch"
+                        style="@style/SwitchCompatStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:enabled="false"
                         android:clickable="false"
-                        />
+                        android:enabled="false" />
                 </LinearLayout>
+
                 <LinearLayout
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/key"/>
+                        android:text="@string/key" />
+
                     <android.support.v4.widget.Space
                         android:layout_width="match_parent"
-                        android:layout_height="10dp"/>
+                        android:layout_height="10dp" />
+
                     <Switch
-                        style="@style/SwitchCompatStyle"
                         android:id="@+id/key_switch"
+                        style="@style/SwitchCompatStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:enabled="false"
                         android:clickable="false"
-                        />
+                        android:enabled="false" />
                 </LinearLayout>
             </LinearLayout>
+
             <LinearLayout
-                android:layout_weight="1"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
                 <LinearLayout
-                    android:gravity="center"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/doors"/>
+                        android:text="@string/doors" />
+
                     <android.support.v4.widget.Space
                         android:layout_width="match_parent"
-                        android:layout_height="10dp"/>
+                        android:layout_height="10dp" />
+
                     <Switch
-                        style="@style/SwitchCompatStyle"
                         android:id="@+id/doors_switch"
+                        style="@style/SwitchCompatStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:enabled="false"
                         android:clickable="false"
-                        />
-                </LinearLayout><LinearLayout
-                android:gravity="center"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/mileage"/>
-                <android.support.v4.widget.Space
+                        android:enabled="false" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="10dp"/>
-                <TextView
-                    android:id="@+id/mileage_text_view"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/loading"/>
-            </LinearLayout>
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mileage" />
+
+                    <android.support.v4.widget.Space
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp" />
+
+                    <TextView
+                        android:id="@+id/mileage_text_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/loading" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
-        
+
         <LinearLayout
-            android:layout_alignParentBottom="true"
-            android:gravity="center"
-            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="150dp"
-            android:layout_marginBottom="20dp">
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="20dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
             <TextView
                 android:id="@+id/lock_state_text_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/door_lock_state_unknown"
-                android:textSize="18dp"/>
+                android:textSize="18sp" />
 
             <android.support.v4.widget.Space
                 android:layout_width="match_parent"
-                android:layout_height="10dp"/>
+                android:layout_height="10dp" />
 
             <Button
                 android:id="@+id/lock_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/lock_doors_btn_text"/>
+                android:text="@string/lock_doors_btn_text" />
         </LinearLayout>
     </RelativeLayout>
 </RelativeLayout>

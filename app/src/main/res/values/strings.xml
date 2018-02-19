@@ -13,6 +13,8 @@
     <string name="refreshing">refreshing …</string>
     <string name="load_access_certificate">load access certificates …</string>
     <string name="load_device_certificate">load device certificate …</string>
+    <string name="refresh">refresh</string>
+    <string name="revoke">revoke</string>
 
     <string name="idle">idle</string>
     <string name="bluetooth_not_available">bluetooth n/a</string>

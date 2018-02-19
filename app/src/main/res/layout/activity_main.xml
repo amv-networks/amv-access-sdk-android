@@ -43,8 +43,8 @@
                     android:textAlignment="center"
                     android:textColor="#ffff"
                     android:textStyle="normal"
-                    android:textSize="16dp"
-                    android:layout_marginLeft="10dp"
+                    android:textSize="16sp"
+                    android:layout_marginStart="10dp"
                     android:background="#00000000"
                     />
             </LinearLayout>
@@ -57,10 +57,10 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/refreshhdpi"
                 android:background="@null"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:visibility="gone"
-                />
+                android:contentDescription="@string/refresh" />
         </RelativeLayout>
         <LinearLayout
             android:layout_width="match_parent"
