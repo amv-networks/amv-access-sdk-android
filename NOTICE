@@ -2,3 +2,7 @@ amv-access-sdk-android
 Copyright 2018 AMV Networks GmbH
 
 This product includes software developed at AMV Networks GmbH (https://www.amv-networks.com/).
+
+This software uses HMKit Android SDK that is distributed by High-Mobility GmbH as a dependency.
+The following license applies for HMKit Android https://developers.high-mobility.com/resources/android-sdk-license/.
+Please contact AMV Networks GmbH for other commercial license options together with AMV Neworks GmbH products.

@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/amv-networks/amv-access-sdk-android.svg?branch=master)](https://travis-ci.org/amv-networks/amv-access-sdk-android)
 [![Jitpack](https://jitpack.io/v/amv-networks/amv-access-sdk-android.svg)](https://jitpack.io/#amv-networks/amv-access-sdk-android)
+[![License](https://img.shields.io/github/license/amv-networks/amv-access-sdk-android.svg?maxAge=2592000)](https://github.com/amv-networks/amv-access-sdk-android/blob/master/LICENSE)
+
 
 amv-access-sdk-android
 ======================
@@ -78,4 +80,6 @@ dependencies {
 }
 ```
 
+# license
+The project is licensed under the Apache License. See [LICENSE](LICENSE) for details.
     
