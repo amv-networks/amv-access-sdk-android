@@ -8,7 +8,6 @@ import com.google.gson.reflect.TypeToken;
 import com.highmobility.crypto.Crypto;
 import com.highmobility.crypto.DeviceCertificate;
 import com.highmobility.crypto.HMKeyPair;
-import com.highmobility.crypto.KeyPair;
 import com.highmobility.utils.Base64;
 
 import org.amv.access.sdk.hm.crypto.HmKeys;
@@ -193,7 +192,7 @@ public class HmLocalStorage implements LocalStorage {
     private void createKeys() {
         try {
             Log.d(TAG, "createKeys");
-            KeyPair keyPair = Crypto.createKeypair();
+            HMKeyPair keyPair = Crypto.createKeypair();
 
             secureStorage.storeString(KEY_PRIVATE_KEY, keyPair.getPrivateKeyBase64()).blockingFirst();
             secureStorage.storeString(KEY_PUBLIC_KEY, keyPair.getPublicKeyBase64()).blockingFirst();
