@@ -1,15 +1,15 @@
 package org.amv.access.sdk.hm.crypto;
 
-import com.highmobility.crypto.HMKeyPair;
+import com.highmobility.crypto.KeyPair;
 
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HmKeys implements Keys {
-    private final HMKeyPair keyPair;
+    private final KeyPair keyPair;
 
-    public HmKeys(HMKeyPair keyPair) {
+    public HmKeys(KeyPair keyPair) {
         this.keyPair = checkNotNull(keyPair);
     }
 

@@ -7,7 +7,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.highmobility.crypto.Crypto;
 import com.highmobility.crypto.DeviceCertificate;
-import com.highmobility.crypto.HMKeyPair;
+import com.highmobility.crypto.KeyPair;
 import com.highmobility.utils.Base64;
 
 import org.amv.access.sdk.hm.crypto.HmKeys;
@@ -160,7 +160,7 @@ public class HmLocalStorage implements LocalStorage {
                 .doOnNext(foo -> Log.d(TAG, "removeAccessCertificateById finished"));
     }
 
-    private HMKeyPair getOrCreateKeyPair() {
+    private KeyPair getOrCreateKeyPair() {
         createKeysIfAbsent();
 
         String privateKeyBase64 = secureStorage.findString(KEY_PRIVATE_KEY).blockingFirst().get();
@@ -169,7 +169,7 @@ public class HmLocalStorage implements LocalStorage {
         byte[] privateKey = Base64.decode(privateKeyBase64);
         byte[] publicKey = Base64.decode(publicKeyBase64);
 
-        return new HMKeyPair(privateKey, publicKey);
+        return new KeyPair(privateKey, publicKey);
     }
 
     private void createKeysIfAbsent() {
@@ -192,7 +192,7 @@ public class HmLocalStorage implements LocalStorage {
     private void createKeys() {
         try {
             Log.d(TAG, "createKeys");
-            HMKeyPair keyPair = Crypto.createKeypair();
+            KeyPair keyPair = Crypto.createKeypair();
 
             secureStorage.storeString(KEY_PRIVATE_KEY, keyPair.getPrivateKeyBase64()).blockingFirst();
             secureStorage.storeString(KEY_PUBLIC_KEY, keyPair.getPublicKeyBase64()).blockingFirst();

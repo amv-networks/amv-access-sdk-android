@@ -51,7 +51,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation(name: 'hmkit-android', version: '1.0.11', ext: 'aar')
+    implementation(name: 'hmkit-android', version: '1.0.12', ext: 'aar')
 
     implementation project(':amv-hm-access-sdk')
 
