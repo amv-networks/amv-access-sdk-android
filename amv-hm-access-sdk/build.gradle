@@ -53,7 +53,8 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    compileOnly(name: 'hmkit-android', version: '1.0.12', ext: 'aar')
+    compileOnly(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
+    testImplementation(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
 
     // currently pulled in because it is needed by hmkit (otherwise NoClassDefFoundErrors are thrown)
     // this can be removed once the webservice layer has been externalized by hm
