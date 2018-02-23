@@ -16,8 +16,6 @@ import org.amv.access.sdk.spi.bluetooth.IncomingCommandEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleIncomingCommandEvent;
 
-import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
 
@@ -41,7 +39,7 @@ public class HmBluetoothConnection implements BluetoothConnection {
 
     @Override
     public Observable<Boolean> sendCommand(byte[] command) {
-        return Observable.<Boolean>unsafeCreate(subscriber -> {
+        return Observable.create(subscriber -> {
             connectedLink.sendCommand(command, new Link.CommandCallback() {
                 @Override
                 public void onCommandSent() {
@@ -54,7 +52,7 @@ public class HmBluetoothConnection implements BluetoothConnection {
                     subscriber.onError(new RuntimeException(linkError.getType() + ": " + linkError.getMessage()));
                 }
             });
-        }).timeout(15, TimeUnit.SECONDS);
+        });
     }
 
     @Override

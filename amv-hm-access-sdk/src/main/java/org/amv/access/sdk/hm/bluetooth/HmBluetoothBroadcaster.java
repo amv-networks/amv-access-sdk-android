@@ -39,7 +39,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     @Override
     public Observable<Boolean> startBroadcasting(AccessCertificatePair accessCertificatePair) {
-        return Observable.unsafeCreate(subscriber -> {
+        return Observable.create(subscriber -> {
             Log.d(TAG, "startConnecting");
 
             stopBroadcasting();
