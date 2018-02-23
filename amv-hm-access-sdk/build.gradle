@@ -52,9 +52,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
     compileOnly(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
-    testImplementation(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
 
     // currently pulled in because it is needed by hmkit (otherwise NoClassDefFoundErrors are thrown)
     // this can be removed once the webservice layer has been externalized by hm
@@ -76,4 +74,10 @@ dependencies {
 
     androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"
+
+    // jar files are explicitly pulled in because 'hmkit-android' does not have a groupId
+    // which leads to issues when downloading the lib from jcenter/central/etc.
+    // ("Could not parse POM: Missing required attribute: dependency groupId")
+    // fails -> testImplementation(name: 'hmkit-android', version: "${hmkitVersion}", ext: 'aar')
+    testImplementation fileTree(include: ['*.jar'], dir: 'libs')
 }
