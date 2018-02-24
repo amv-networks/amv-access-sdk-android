@@ -3,17 +3,19 @@ package org.amv.access.sdk.hm;
 import android.content.Context;
 import android.util.Log;
 
-import com.highmobility.hmkit.Broadcaster;
 import com.highmobility.hmkit.Manager;
 
 import org.amv.access.sdk.hm.bluetooth.BluetoothBroadcaster;
 import org.amv.access.sdk.hm.bluetooth.HmBluetoothBroadcaster;
 import org.amv.access.sdk.hm.bluetooth.HmBluetoothCommunicationManager;
 import org.amv.access.sdk.hm.certificate.HmCertificateManager;
+import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.hm.communication.HmCommandFactory;
+import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.spi.AccessSdk;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
+import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.communication.CommunicationManagerFactory;
 
@@ -33,14 +35,18 @@ public class AmvAccessSdk implements AccessSdk {
 
     private final Context context;
     private final Manager manager;
+    private final LocalStorage localStorage;
     private final HmCertificateManager certificateManager;
     private final HmCommandFactory commandFactory;
 
-    AmvAccessSdk(Context context, Manager manager,
+    AmvAccessSdk(Context context,
+                 Manager manager,
+                 LocalStorage localStorage,
                  HmCertificateManager certificateManager,
                  HmCommandFactory commandFactory) {
         this.context = checkNotNull(context);
         this.manager = checkNotNull(manager);
+        this.localStorage = checkNotNull(localStorage);
         this.certificateManager = checkNotNull(certificateManager);
         this.commandFactory = checkNotNull(commandFactory);
     }
@@ -52,6 +58,7 @@ public class AmvAccessSdk implements AccessSdk {
                     Log.d("", "Initializing...");
                 })
                 .flatMap(foo -> certificateManager.initialize(context))
+                .flatMap(foo -> initializeHmManager())
                 .map(foo -> true);
     }
 
@@ -71,7 +78,32 @@ public class AmvAccessSdk implements AccessSdk {
     }
 
     private BluetoothBroadcaster createBluetoothBroadcaster() {
-        Broadcaster b = manager.getBroadcaster();
-        return new HmBluetoothBroadcaster(b);
+        return new HmBluetoothBroadcaster(manager.getBroadcaster());
+    }
+
+    private Observable<Boolean> initializeHmManager() {
+        Observable<byte[]> issuerPublicKeyObservable = localStorage.findIssuerPublicKey();
+
+        Observable<byte[]> devicePrivateKeyObservable = localStorage.findKeys()
+                .map(Keys::getPrivateKey);
+
+        Observable<com.highmobility.crypto.DeviceCertificate> hmDeviceCertObservable = localStorage
+                .findDeviceCertificate()
+                .map(DeviceCertificate::toByteArray)
+                .map(com.highmobility.crypto.DeviceCertificate::new);
+
+        return Observable.zip(
+                issuerPublicKeyObservable,
+                devicePrivateKeyObservable,
+                hmDeviceCertObservable,
+                (issuerPublicKey, devicePrivateKey, deviceCert) -> {
+                    manager.initialize(
+                            deviceCert,
+                            devicePrivateKey,
+                            issuerPublicKey,
+                            context);
+                    return true;
+                }
+        );
     }
 }

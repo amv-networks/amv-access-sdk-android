@@ -37,19 +37,25 @@ class AmvAccessSdkConfiguration {
     }
 
     AmvAccessSdk amvAccessSdk() {
+        LocalStorage localStorage = localStorage();
+
         return new AmvAccessSdk(context,
-                Manager.getInstance(),
-                certificateManager(),
+                manager(),
+                localStorage,
+                certificateManager(localStorage),
                 commandFactory());
+    }
+
+    private Manager manager() {
+        return Manager.getInstance();
     }
 
     private HmCommandFactory commandFactory() {
         return new HmCommandFactory();
     }
 
-    private HmCertificateManager certificateManager() {
-        Manager manager = Manager.getInstance();
-        return new HmCertificateManager(manager, localStorage(), remote());
+    private HmCertificateManager certificateManager(LocalStorage localStorage) {
+        return new HmCertificateManager(localStorage, remote());
     }
 
     private Remote remote() {

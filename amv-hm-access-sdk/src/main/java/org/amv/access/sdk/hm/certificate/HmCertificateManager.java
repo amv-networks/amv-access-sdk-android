@@ -5,7 +5,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.highmobility.hmkit.Manager;
 
 import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.hm.error.CertificateDownloadException;
@@ -33,12 +32,10 @@ public class HmCertificateManager implements CertificateManager {
                     .setNameFormat("amv-access-sdk-certificate-%d")
                     .build()));
 
-    private final Manager manager;
     private final LocalStorage localStorage;
     private final Remote remote;
 
-    public HmCertificateManager(Manager manager, LocalStorage localStorage, Remote remote) {
-        this.manager = checkNotNull(manager);
+    public HmCertificateManager(LocalStorage localStorage, Remote remote) {
         this.localStorage = checkNotNull(localStorage);
         this.remote = checkNotNull(remote);
     }
@@ -48,19 +45,7 @@ public class HmCertificateManager implements CertificateManager {
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
                 .flatMap(foo -> localStorage.findKeys())
-                .flatMap(keys -> findLocallyOrDownloadDeviceCertificateWithIssuerKey(keys)
-                        .doOnNext(deviceCertificateWithIssuerKey -> {
-                            byte[] deviceCertificate = deviceCertificateWithIssuerKey
-                                    .getDeviceCertificate()
-                                    .toByteArray();
-
-                            // TODO: this should be done in AmvAccessSdk -> storage needs to expose publisher key
-                            manager.initialize(
-                                    new com.highmobility.crypto.DeviceCertificate(deviceCertificate),
-                                    keys.getPrivateKey(),
-                                    deviceCertificateWithIssuerKey.getIssuerPublicKey(),
-                                    context);
-                        }))
+                .flatMap(this::findLocallyOrDownloadDeviceCertificateWithIssuerKey)
                 .map(foo -> true)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));
     }
