@@ -42,11 +42,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 /**
  * Instrumentation test, which will execute on an Android device.
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
+ * <p>
+ * In order to avoid hanging tests due to animations, please disable the following 
+ * settings on your device under Settings > Developer options:
+ * - Window animation scale
+ * - Transition animation scale
+ * - Animator duration scale
+ * @see <a href="https://developer.android.com/training/testing/espresso/setup.html">
+ * Espresso setup instructions</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) // run the cert delete last
 @RunWith(AndroidJUnit4.class)
