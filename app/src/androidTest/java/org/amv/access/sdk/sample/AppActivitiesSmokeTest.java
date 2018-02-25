@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  * <p>
- * In order to avoid hanging tests due to animations, please disable the following 
+ * In order to avoid hanging tests due to animations, please disable the following
  * settings on your device under Settings > Developer options:
  * - Window animation scale
  * - Transition animation scale
@@ -57,7 +57,7 @@ import static org.junit.Assert.fail;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) // run the cert delete last
 @RunWith(AndroidJUnit4.class)
-public class InstrumentedTests {
+public class AppActivitiesSmokeTest {
     @Rule
     public IntentsTestRule<CertificatesActivity> mainActivityActivityTestRule =
             new IntentsTestRule<>(CertificatesActivity.class);

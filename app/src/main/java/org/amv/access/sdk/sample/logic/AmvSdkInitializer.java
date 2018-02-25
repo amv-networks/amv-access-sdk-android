@@ -17,7 +17,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import io.reactivex.Observable;
 
 @NotThreadSafe
-final class AmvSdkInitializer {
+public final class AmvSdkInitializer {
     private static final AtomicReference<AccessSdk> INSTANCE = new AtomicReference<>();
 
     private static final String APPLICATION_PROPERTIES_FILE_NAME = "application.properties";
@@ -25,7 +25,7 @@ final class AmvSdkInitializer {
     private static final String API_KEY_PROPERTY_NAME = "amv.access.api.apiKey";
     private static final String API_APP_ID_PROPERTY_NAME = "amv.access.api.appId";
 
-    static synchronized Observable<AccessSdk> create(Context context) {
+    public static synchronized Observable<AccessSdk> create(Context context) {
         if (INSTANCE.get() != null) {
             return Observable.just(INSTANCE.get());
         }
