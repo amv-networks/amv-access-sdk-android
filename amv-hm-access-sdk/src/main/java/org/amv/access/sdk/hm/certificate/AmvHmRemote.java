@@ -20,6 +20,7 @@ import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
@@ -64,7 +65,7 @@ public class AmvHmRemote implements Remote {
                 })
                 .map(val -> val.device_certificate)
                 .map(AmvDeviceCertificateWithIssuerKey::new)
-                .map(val -> (DeviceCertificateWithIssuerKey) val)
+                .cast(DeviceCertificateWithIssuerKey.class)
                 .doOnNext(foo -> Log.d(TAG, "createDeviceCertificate finished"));
     }
 
@@ -105,9 +106,16 @@ public class AmvHmRemote implements Remote {
     }
 
     private String[] createNonceAndSignature(Keys keys) {
-        byte[] nonce = Crypto.createSerialNumber();
+        byte[] nonce = generateNonce();
         byte[] nonceSignature = Crypto.sign(nonce, keys.getPrivateKey());
         return new String[]{Base64.encode(nonce), Base64.encode(nonceSignature)};
+    }
+
+    private byte[] generateNonce() {
+        SecureRandom random = new SecureRandom();
+        byte[] nonce = new byte[64];
+        random.nextBytes(nonce);
+        return nonce;
     }
 
     private String getErrorMessage(Throwable error) {
@@ -125,7 +133,7 @@ public class AmvHmRemote implements Remote {
 
         boolean isUnknownHostException = UnknownHostException.class.isAssignableFrom(cause.getClass());
         if (isUnknownHostException) {
-            return "Cannot startConnecting to server. Please check internet connection.\n" + cause.getMessage();
+            return "Cannot connect to server. Please check internet connection.\n" + cause.getMessage();
         }
 
         return cause.getMessage();
