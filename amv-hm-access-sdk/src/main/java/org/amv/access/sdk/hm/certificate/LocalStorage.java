@@ -18,6 +18,8 @@ public interface LocalStorage {
 
     Observable<byte[]> findIssuerPublicKey();
 
+    Observable<Boolean> storeKeys(Keys keys);
+
     Observable<Keys> findKeys();
 
     Observable<Boolean> storeAccessCertificates(List<AccessCertificatePair> certificates);

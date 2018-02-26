@@ -19,12 +19,12 @@ import org.amv.access.sdk.hm.util.Json;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -44,10 +44,6 @@ public class HmLocalStorage implements LocalStorage {
 
     private final Storage storage;
     private final SecureStorage secureStorage;
-
-    private final Observable<Keys> keysObservable = Observable.just(1)
-            .map(foo -> (Keys) new HmKeys(getOrCreateKeyPair()))
-            .cache();
 
     public HmLocalStorage(SecureStorage secureStorage, Storage dataStorage) {
         this.secureStorage = checkNotNull(secureStorage);
@@ -88,7 +84,6 @@ public class HmLocalStorage implements LocalStorage {
                 .flatMap(foo -> storage.findString(KEY_ISSUER_PUBLIC_KEY))
                 .flatMap(issuerKeyOptional -> issuerKeyOptional
                         .transform(Base64::decode)
-                        .transform(val -> Arrays.copyOf(val, val.length))
                         .transform(Observable::just)
                         .or(() -> Observable.error(new IllegalStateException("No issuer key found"))))
                 .doOnNext(foo -> Log.d(TAG, "findIssuerPublicKey finished"));
@@ -110,8 +105,44 @@ public class HmLocalStorage implements LocalStorage {
         return Observable.just(1)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "findKeys"))
-                .flatMap(foo -> keysObservable)
+                .flatMap(foo -> {
+                    Single<byte[]> getPrivateKeyOrThrow = secureStorage.findString(KEY_PRIVATE_KEY)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(Base64::decode)
+                            .singleOrError();
+
+                    Single<byte[]> getPublicKeyOrThrow = secureStorage.findString(KEY_PUBLIC_KEY)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(Base64::decode)
+                            .singleOrError();
+
+                    return getPrivateKeyOrThrow.zipWith(getPublicKeyOrThrow, KeyPair::new)
+                            .toObservable();
+                })
+                .map(HmKeys::new)
+                .cast(Keys.class)
                 .doOnNext(foo -> Log.d(TAG, "findKeys finished"));
+    }
+
+    @Override
+    public Observable<Boolean> storeKeys(Keys keys) {
+        return Observable.just(keys)
+                .subscribeOn(SCHEDULER)
+                .doOnNext(foo -> Log.d(TAG, "storeKeys"))
+                .flatMap(k -> {
+                    Observable<Boolean> storePrivateKey = Observable.just(k.getPrivateKey())
+                            .map(Base64::encode)
+                            .flatMap(privateKeyBase64 -> secureStorage.storeString(KEY_PRIVATE_KEY, privateKeyBase64));
+
+                    Observable<Boolean> storePublicKey = Observable.just(k.getPublicKey())
+                            .map(Base64::encode)
+                            .flatMap(publicKeyBase64 -> secureStorage.storeString(KEY_PUBLIC_KEY, publicKeyBase64));
+
+                    return storePrivateKey.zipWith(storePublicKey, (s1, s2) -> s1 && s2);
+                })
+                .doOnNext(foo -> Log.d(TAG, "storeKeys finished"));
     }
 
     @Override
@@ -159,47 +190,4 @@ public class HmLocalStorage implements LocalStorage {
                 .flatMapObservable(this::storeAccessCertificates)
                 .doOnNext(foo -> Log.d(TAG, "removeAccessCertificateById finished"));
     }
-
-    private KeyPair getOrCreateKeyPair() {
-        createKeysIfAbsent();
-
-        String privateKeyBase64 = secureStorage.findString(KEY_PRIVATE_KEY).blockingFirst().get();
-        String publicKeyBase64 = secureStorage.findString(KEY_PUBLIC_KEY).blockingFirst().get();
-
-        byte[] privateKey = Base64.decode(privateKeyBase64);
-        byte[] publicKey = Base64.decode(publicKeyBase64);
-
-        return new KeyPair(privateKey, publicKey);
-    }
-
-    private void createKeysIfAbsent() {
-        if (!isKeysPresent()) {
-            createKeys();
-        }
-    }
-
-    private boolean isKeysPresent() {
-        try {
-            Optional<String> privateKey = secureStorage.findString(KEY_PRIVATE_KEY).blockingFirst();
-            Optional<String> publicKey = secureStorage.findString(KEY_PUBLIC_KEY).blockingFirst();
-
-            return privateKey.isPresent() && publicKey.isPresent();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private void createKeys() {
-        try {
-            Log.d(TAG, "createKeys");
-            KeyPair keyPair = Crypto.createKeypair();
-
-            secureStorage.storeString(KEY_PRIVATE_KEY, keyPair.getPrivateKeyBase64()).blockingFirst();
-            secureStorage.storeString(KEY_PUBLIC_KEY, keyPair.getPublicKeyBase64()).blockingFirst();
-            Log.d(TAG, "createKeys finished");
-        } catch (Exception e) {
-            throw new CreateKeysFailedException(e);
-        }
-    }
-
 }
