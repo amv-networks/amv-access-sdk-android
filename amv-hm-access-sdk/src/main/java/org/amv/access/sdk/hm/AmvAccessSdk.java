@@ -26,10 +26,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class AmvAccessSdk implements AccessSdk {
 
     public static AccessSdk create(Context context, AccessApiContext accessApiContext) {
-        checkNotNull(context);
-        checkNotNull(accessApiContext);
+        return create(context, AccessSdkOptionsImpl.builder()
+                .accessApiContext(accessApiContext)
+                .build());
+    }
 
-        AmvAccessSdkConfiguration config = new AmvAccessSdkConfiguration(context, accessApiContext);
+    public static AccessSdk create(Context context, AccessSdkOptions accessSdkOptions) {
+        checkNotNull(context);
+        checkNotNull(accessSdkOptions);
+
+        AmvAccessSdkConfiguration config = new AmvAccessSdkConfiguration(context, accessSdkOptions);
         return config.amvAccessSdk();
     }
 

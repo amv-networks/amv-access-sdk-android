@@ -17,6 +17,7 @@ import org.amv.access.sdk.hm.certificate.HmLocalStorage;
 import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.hm.certificate.Remote;
 import org.amv.access.sdk.hm.communication.HmCommandFactory;
+import org.amv.access.sdk.hm.secure.Codec;
 import org.amv.access.sdk.hm.secure.ConcealCodec;
 import org.amv.access.sdk.hm.secure.PlaintextCodec;
 import org.amv.access.sdk.hm.secure.SecureStorage;
@@ -29,11 +30,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 class AmvAccessSdkConfiguration {
     private final Context context;
-    private final AccessApiContext accessApiContext;
+    private final AccessSdkOptions accessSdkOptions;
 
-    AmvAccessSdkConfiguration(Context context, AccessApiContext accessApiContext) {
+    AmvAccessSdkConfiguration(Context context, AccessSdkOptions accessSdkOptions) {
         this.context = checkNotNull(context);
-        this.accessApiContext = checkNotNull(accessApiContext);
+        this.accessSdkOptions = checkNotNull(accessSdkOptions);
     }
 
     AmvAccessSdk amvAccessSdk() {
@@ -59,7 +60,7 @@ class AmvAccessSdkConfiguration {
     }
 
     private Remote remote() {
-        return new AmvHmRemote(accessApiContext);
+        return new AmvHmRemote(accessSdkOptions.getAccessApiContext());
     }
 
     private LocalStorage localStorage() {
@@ -73,11 +74,12 @@ class AmvAccessSdkConfiguration {
 
     private SecureStorage secureStorage() {
         SharedPreferencesStorage sharedPreferencesStorage = sharedPreferencesStorage();
-        return new SingleCodecSecureStorage(sharedPreferencesStorage, concealCodec());
+        Codec secureStorageCodec = accessSdkOptions.getSecureStorageCodec().or(this::concealCodec);
+        return new SingleCodecSecureStorage(sharedPreferencesStorage, secureStorageCodec);
     }
 
     private SharedPreferencesStorage sharedPreferencesStorage() {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("HM_SHARED_PREFS_ALIAS", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = context.getSharedPreferences(accessSdkOptions.getSharedPreferencesName(), MODE_PRIVATE);
         return new SharedPreferencesStorage(sharedPreferences);
     }
 
