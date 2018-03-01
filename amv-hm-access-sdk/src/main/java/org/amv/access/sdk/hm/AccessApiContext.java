@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
+/**
+ * todo: create interface and move to package with other config related class in v1.0.0
+ */
 @Value
 @Builder
 public class AccessApiContext {

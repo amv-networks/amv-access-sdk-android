@@ -2,12 +2,14 @@ package org.amv.access.sdk.sample.logic;
 
 
 import android.content.Context;
+import android.support.annotation.VisibleForTesting;
 
 import org.amv.access.sdk.hm.AccessApiContext;
+import org.amv.access.sdk.hm.config.AccessSdkOptions;
+import org.amv.access.sdk.hm.config.AccessSdkOptionsImpl;
 import org.amv.access.sdk.hm.AmvAccessSdk;
 import org.amv.access.sdk.sample.util.PropertiesReader;
 import org.amv.access.sdk.spi.AccessSdk;
-import org.amv.access.sdk.spi.error.AccessSdkException;
 
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,13 +28,18 @@ public final class AmvSdkInitializer {
     private static final String API_APP_ID_PROPERTY_NAME = "amv.access.api.appId";
 
     public static synchronized Observable<AccessSdk> create(Context context) {
+        return create(context, AccessSdkOptionsImpl.builder()
+                .accessApiContext(createAccessApiContext(context))
+                .build());
+    }
+
+    public static synchronized Observable<AccessSdk> create(Context context, AccessSdkOptions accessSdkOptions) {
         if (INSTANCE.get() != null) {
             return Observable.just(INSTANCE.get());
         }
 
         try {
-            AccessApiContext accessApiContext = createAccessApiContext(context);
-            AccessSdk accessSdk = AmvAccessSdk.create(context, accessApiContext);
+            AccessSdk accessSdk = AmvAccessSdk.create(context, accessSdkOptions);
 
             INSTANCE.set(accessSdk);
 
@@ -58,7 +65,8 @@ public final class AmvSdkInitializer {
      * @param context the application context
      * @return an access api context with values read from a properties file
      */
-    private static AccessApiContext createAccessApiContext(Context context) {
+    @VisibleForTesting
+    public static AccessApiContext createAccessApiContext(Context context) {
         PropertiesReader propertiesReader = new PropertiesReader(context);
         Properties applicationProperties = propertiesReader.getProperties(APPLICATION_PROPERTIES_FILE_NAME);
 

@@ -11,6 +11,8 @@ import org.amv.access.sdk.hm.bluetooth.HmBluetoothCommunicationManager;
 import org.amv.access.sdk.hm.certificate.HmCertificateManager;
 import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.hm.communication.HmCommandFactory;
+import org.amv.access.sdk.hm.config.AccessSdkOptions;
+import org.amv.access.sdk.hm.config.AccessSdkOptionsImpl;
 import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.spi.AccessSdk;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
@@ -40,17 +42,20 @@ public class AmvAccessSdk implements AccessSdk {
     }
 
     private final Context context;
+    private final AccessSdkOptions accessSdkOptions;
     private final Manager manager;
     private final LocalStorage localStorage;
     private final HmCertificateManager certificateManager;
     private final HmCommandFactory commandFactory;
 
     AmvAccessSdk(Context context,
+                 AccessSdkOptions accessSdkOptions,
                  Manager manager,
                  LocalStorage localStorage,
                  HmCertificateManager certificateManager,
                  HmCommandFactory commandFactory) {
         this.context = checkNotNull(context);
+        this.accessSdkOptions = checkNotNull(accessSdkOptions);
         this.manager = checkNotNull(manager);
         this.localStorage = checkNotNull(localStorage);
         this.certificateManager = checkNotNull(certificateManager);
@@ -63,7 +68,7 @@ public class AmvAccessSdk implements AccessSdk {
                 .doOnNext(foo -> {
                     Log.d("", "Initializing...");
                 })
-                .flatMap(foo -> certificateManager.initialize(context))
+                .flatMap(foo -> certificateManager.initialize(context, accessSdkOptions))
                 .flatMap(foo -> initializeHmManager())
                 .map(foo -> true);
     }

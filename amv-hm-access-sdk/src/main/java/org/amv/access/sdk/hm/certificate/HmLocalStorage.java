@@ -5,14 +5,12 @@ import android.util.Log;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.highmobility.crypto.Crypto;
 import com.highmobility.crypto.DeviceCertificate;
 import com.highmobility.crypto.KeyPair;
 import com.highmobility.utils.Base64;
 
 import org.amv.access.sdk.hm.crypto.HmKeys;
 import org.amv.access.sdk.hm.crypto.Keys;
-import org.amv.access.sdk.hm.error.CreateKeysFailedException;
 import org.amv.access.sdk.hm.secure.SecureStorage;
 import org.amv.access.sdk.hm.secure.Storage;
 import org.amv.access.sdk.hm.util.Json;
@@ -121,7 +119,7 @@ public class HmLocalStorage implements LocalStorage {
                     return getPrivateKeyOrThrow.zipWith(getPublicKeyOrThrow, KeyPair::new)
                             .toObservable();
                 })
-                .map(HmKeys::new)
+                .map(HmKeys::create)
                 .cast(Keys.class)
                 .doOnNext(foo -> Log.d(TAG, "findKeys finished"));
     }

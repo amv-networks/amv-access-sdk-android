@@ -6,7 +6,14 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import com.google.common.base.Optional;
+import com.highmobility.utils.Bytes;
 
+import org.amv.access.sdk.hm.AccessApiContext;
+import org.amv.access.sdk.hm.AmvAccessSdk;
+import org.amv.access.sdk.hm.config.AccessSdkOptions;
+import org.amv.access.sdk.hm.config.AccessSdkOptionsImpl;
+import org.amv.access.sdk.hm.config.UserIdentityImpl;
+import org.amv.access.sdk.hm.crypto.KeysImpl;
 import org.amv.access.sdk.sample.logic.AmvSdkInitializer;
 import org.amv.access.sdk.spi.AccessSdk;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
@@ -33,6 +40,9 @@ import static org.junit.Assert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) // run the cert delete last
 @RunWith(AndroidJUnit4.class)
 public class AmvAccessSdkTest {
+    private static final String SAMPLE_DEVICE_SERIAL = "44dc3353a4bbd61695";
+    private static final String SAMPLE_PUBLIC_KEY_IN_HEX = "ECFB189204A7575D15B43C6BB8681BE3F88C03B36B7520ECCCFDC7E5FD4282A5BF320C2A7017231CDECBB0DB6A20A371B61983B05A5B302DF488941F5C9CFABA";
+    private static final String SAMPLE_PRIVATE_KEY_IN_HEX = "19BA16FF9D7498189FC7F15E43926A6313A383C87209C2EA696A06C3B17BC602";
 
     @Test
     public void useAppContext() throws Exception {
@@ -45,8 +55,36 @@ public class AmvAccessSdkTest {
     public void initAmvAccessSdk() throws Exception {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        AccessSdk accessSdk = AmvSdkInitializer.create(appContext)
-                .blockingFirst();
+        AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
+                .accessApiContext(AmvSdkInitializer.createAccessApiContext(appContext))
+                .build();
+
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
+
+        accessSdk.initialize().blockingFirst();
+
+        assertThat(accessSdk, is(notNullValue()));
+    }
+
+    @Test
+    public void initAmvAccessSdkWithExistingKeys() throws Exception {
+        initAmvAccessSdk(); // init without keys before overwriting with given ones
+
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        AccessApiContext accessApiContext = AmvSdkInitializer.createAccessApiContext(appContext);
+
+        AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
+                .accessApiContext(accessApiContext)
+                .userIdentity(UserIdentityImpl.builder()
+                        .deviceSerial(Bytes.bytesFromHex(SAMPLE_DEVICE_SERIAL))
+                        .keys(new KeysImpl(Bytes.bytesFromHex(SAMPLE_PUBLIC_KEY_IN_HEX), Bytes.bytesFromHex(SAMPLE_PRIVATE_KEY_IN_HEX)))
+                        .build())
+                .build();
+
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
+
+        accessSdk.initialize().blockingFirst();
 
         assertThat(accessSdk, is(notNullValue()));
     }

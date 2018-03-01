@@ -7,6 +7,8 @@ import android.util.Pair;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.highmobility.crypto.Crypto;
 
+import org.amv.access.sdk.hm.config.AccessSdkOptions;
+import org.amv.access.sdk.hm.config.UserIdentity;
 import org.amv.access.sdk.hm.crypto.HmKeys;
 import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.hm.error.CertificateDownloadException;
@@ -43,11 +45,11 @@ public class HmCertificateManager implements CertificateManager {
         this.remote = checkNotNull(remote);
     }
 
-    public Observable<Boolean> initialize(Context context) {
+    public Observable<Boolean> initialize(Context context, AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
-                .flatMap(foo -> findOrCreateKeys())
+                .flatMap(foo -> findOrCreateKeys(accessSdkOptions))
                 .flatMap(this::findLocallyOrDownloadDeviceCertificateWithIssuerKey)
                 .map(foo -> true)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));
@@ -149,12 +151,11 @@ public class HmCertificateManager implements CertificateManager {
                         .map(foo -> dc));
     }
 
-
-    public Observable<Keys> findOrCreateKeys() {
+    private Observable<Keys> findOrCreateKeys(AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
                 .subscribeOn(SCHEDULER)
                 .flatMap(foo -> isKeysPresent())
-                .flatMap(keysPresent -> !keysPresent ? createKeys() : localStorage.findKeys());
+                .flatMap(keysPresent -> !keysPresent ? createAndStoreKeys(accessSdkOptions) : localStorage.findKeys());
     }
 
     private Observable<Boolean> isKeysPresent() {
@@ -164,11 +165,12 @@ public class HmCertificateManager implements CertificateManager {
                 .onErrorReturnItem(false);
     }
 
-    private Observable<Keys> createKeys() {
+    private Observable<Keys> createAndStoreKeys(AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
                 .doOnNext(foo -> Log.d(TAG, "createKeys"))
-                .map(foo -> Crypto.createKeypair())
-                .map(HmKeys::new)
+                .map(foo -> accessSdkOptions.getUserIdentity()
+                        .transform(UserIdentity::getKeys)
+                        .or(() -> HmKeys.create(Crypto.createKeypair())))
                 .flatMap(localStorage::storeKeys)
                 .doOnNext(foo -> Log.d(TAG, "createKeys finished"))
                 .onErrorResumeNext(t -> {
