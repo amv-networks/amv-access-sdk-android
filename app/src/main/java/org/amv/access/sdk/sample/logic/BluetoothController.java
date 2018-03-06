@@ -82,8 +82,7 @@ public class BluetoothController implements IBluetoothController {
 
         view.setVehicleSerial(this.accessCertificatePair
                 .getDeviceAccessCertificate()
-                .getGainerSerial()
-                .getSerialNumberHex());
+                .getGainerSerial());
 
         this.communicationManager = this.accessSdk
                 .bluetoothCommunicationManagerFactory()
@@ -151,7 +150,7 @@ public class BluetoothController implements IBluetoothController {
         terminateConnectionManager().subscribe(next -> {
             Log.d(TAG, "ConnectionManager terminated.");
         }, error -> {
-            Log.e(TAG, error.getMessage());
+            Log.e(TAG, "An error occurred", error);
         });
 
         RefWatcher refWatcher = AccessDemoApplication.getRefWatcher(context);

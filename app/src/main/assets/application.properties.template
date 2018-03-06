@@ -3,6 +3,6 @@ amv.access.api.appId=YOUR_APP_ID
 amv.access.api.apiKey=YOUR_API_KEY
 
 # optional
-amv.access.identity.deviceSerialNumber=
-amv.access.identity.publicKey=
-amv.access.identity.privateKey=
+#amv.access.identity.deviceSerialNumber=DEVICE_SERIAL_NUMBER
+#amv.access.identity.publicKey=YOUR_PUBLIC_KEY
+#amv.access.identity.privateKey=YOUR_PRIVATE_KEY

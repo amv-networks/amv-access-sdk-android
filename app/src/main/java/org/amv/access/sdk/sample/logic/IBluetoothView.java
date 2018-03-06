@@ -1,6 +1,7 @@
 package org.amv.access.sdk.sample.logic;
 
 import org.amv.access.sdk.spi.error.AccessSdkException;
+import org.amv.access.sdk.spi.identity.SerialNumber;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 
 public interface IBluetoothView {
@@ -21,7 +22,7 @@ public interface IBluetoothView {
      *
      * @param vehicleSerial The vehicle serial
      */
-    void setVehicleSerial(String vehicleSerial);
+    void setVehicleSerial(SerialNumber vehicleSerial);
 
     /**
      *  Called when the broadcaster state has changed.

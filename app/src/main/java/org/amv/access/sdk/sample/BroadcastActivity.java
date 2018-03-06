@@ -16,12 +16,12 @@ import android.widget.TextView;
 
 import com.squareup.leakcanary.RefWatcher;
 
-import org.amv.access.sdk.sample.R;
-import org.amv.access.sdk.spi.error.AccessSdkException;
-import org.amv.access.sdk.spi.vehicle.VehicleState;
 import org.amv.access.sdk.sample.logic.BluetoothController;
 import org.amv.access.sdk.sample.logic.IBluetoothController;
 import org.amv.access.sdk.sample.logic.IBluetoothView;
+import org.amv.access.sdk.spi.error.AccessSdkException;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.vehicle.VehicleState;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -106,8 +106,8 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
     }
 
     @Override
-    public void setVehicleSerial(String vehicleSerial) {
-        titleText.setText(vehicleSerial);
+    public void setVehicleSerial(SerialNumber vehicleSerial) {
+        titleText.setText(vehicleSerial.getSerialNumberHex());
     }
 
     @Override
