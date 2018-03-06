@@ -20,15 +20,18 @@ import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.hm.certificate.Remote;
 import org.amv.access.sdk.hm.communication.HmCommandFactory;
 import org.amv.access.sdk.hm.config.AccessSdkOptions;
-import org.amv.access.sdk.hm.config.UserIdentity;
-import org.amv.access.sdk.hm.crypto.Keys;
-import org.amv.access.sdk.hm.secure.Codec;
+import org.amv.access.sdk.hm.identity.HmIdentityManager;
 import org.amv.access.sdk.hm.secure.ConcealCodec;
 import org.amv.access.sdk.hm.secure.PlaintextCodec;
 import org.amv.access.sdk.hm.secure.SecureStorage;
 import org.amv.access.sdk.hm.secure.SharedPreferencesStorage;
 import org.amv.access.sdk.hm.secure.SingleCodecSecureStorage;
 import org.amv.access.sdk.hm.secure.Storage;
+import org.amv.access.sdk.spi.certificate.CertificateManager;
+import org.amv.access.sdk.spi.certificate.DeviceCertificate;
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.identity.Identity;
 
 import java.util.Arrays;
 
@@ -37,6 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 class AmvAccessSdkConfiguration {
     private static final String TAG = "AmvAccessSdkConfig";
+    private static final String DEFAULT_SHARED_PREFS_NAME = "HM_SHARED_PREFS_ALIAS";
 
     private final Context context;
     private final AccessSdkOptions accessSdkOptions;
@@ -47,26 +51,37 @@ class AmvAccessSdkConfiguration {
     }
 
     AmvAccessSdk amvAccessSdk() {
+        Remote remote = accessSdkOptions.getRemote().or(this::remote);
         LocalStorage localStorage = localStorage();
+
+        HmCertificateManager certificateManager = certificateManager(localStorage, remote);
+        HmIdentityManager identityManager = identityManager(localStorage, certificateManager);
+        Manager manager = manager();
+        HmCommandFactory commandFactory = commandFactory();
 
         return new AmvAccessSdk(context,
                 accessSdkOptions,
-                manager(),
+                manager,
                 localStorage,
-                certificateManager(localStorage),
-                commandFactory());
+                identityManager,
+                certificateManager,
+                commandFactory);
     }
 
     private Manager manager() {
         return Manager.getInstance();
     }
 
+    private HmIdentityManager identityManager(LocalStorage localStorage, CertificateManager certificateManager) {
+        return new HmIdentityManager(localStorage, certificateManager);
+    }
+
     private HmCommandFactory commandFactory() {
         return new HmCommandFactory();
     }
 
-    private HmCertificateManager certificateManager(LocalStorage localStorage) {
-        return new HmCertificateManager(localStorage, remote());
+    private HmCertificateManager certificateManager(LocalStorage localStorage, Remote remote) {
+        return new HmCertificateManager(localStorage, remote);
     }
 
     private Remote remote() {
@@ -90,8 +105,7 @@ class AmvAccessSdkConfiguration {
     }
 
     private SecureStorage secureStorage(SharedPreferencesStorage sharedPreferencesStorage) {
-        Codec secureStorageCodec = accessSdkOptions.getSecureStorageCodec().or(this::concealCodec);
-        return new SingleCodecSecureStorage(sharedPreferencesStorage, secureStorageCodec);
+        return new SingleCodecSecureStorage(sharedPreferencesStorage, this.concealCodec());
     }
 
     private SharedPreferencesStorage sharedPreferencesStorage(SharedPreferences sharedPreferences) {
@@ -99,7 +113,7 @@ class AmvAccessSdkConfiguration {
     }
 
     private SharedPreferences getSharedPreferences() {
-        return context.getSharedPreferences(accessSdkOptions.getSharedPreferencesName(), MODE_PRIVATE);
+        return context.getSharedPreferences(DEFAULT_SHARED_PREFS_NAME, MODE_PRIVATE);
     }
 
     private ConcealCodec concealCodec() {
@@ -110,32 +124,74 @@ class AmvAccessSdkConfiguration {
         return new ConcealCodec(crypto);
     }
 
-    private void resetSharedPreferencesOnMismatchingIdentity(SharedPreferences sharedPreferences, LocalStorage hmLocalStorage) {
-        Optional<UserIdentity> userIdentity = accessSdkOptions.getUserIdentity();
-        if (userIdentity.isPresent()) {
-            Keys initKeys = userIdentity.get().getKeys();
-
-            Log.d(TAG, "Found keys used for initialization");
-
-            Optional<Keys> deviceKeysOptional = hmLocalStorage.findKeys()
-                    .map(Optional::fromNullable)
-                    .onErrorReturn(e -> Optional.absent())
-                    .defaultIfEmpty(Optional.absent())
-                    .blockingFirst();
-
-            if (deviceKeysOptional.isPresent()) {
-                Keys deviceKeys = deviceKeysOptional.get();
-                boolean matchesGivenKeys = Arrays.equals(deviceKeys.getPrivateKey(), initKeys.getPrivateKey()) &&
-                        Arrays.equals(deviceKeys.getPublicKey(), initKeys.getPublicKey());
-                Log.d(TAG, "Found already present keys! matchesGivenKeys=" + matchesGivenKeys);
-
-                boolean shouldResetPreferences = !matchesGivenKeys;
-                if (shouldResetPreferences) {
-                    Log.d(TAG, "Resetting shared preferences of LocalStorage");
-                    sharedPreferences.edit().clear().commit();
-                }
-            }
+    private void resetSharedPreferencesOnMismatchingIdentity(SharedPreferences sharedPreferences,
+                                                             LocalStorage localStorage) {
+        Optional<Identity> userIdentityOptional = accessSdkOptions.getIdentity();
+        if (!userIdentityOptional.isPresent()) {
+            return;
         }
+
+        Identity identity = userIdentityOptional.get();
+
+
+        boolean shouldResetLocalStorage = shouldResetLocalStorage(identity, localStorage);
+        if (shouldResetLocalStorage) {
+            Log.d(TAG, "Resetting shared preferences of LocalStorage");
+            sharedPreferences.edit().clear().commit();
+        }
+    }
+
+    private boolean shouldResetLocalStorage(Identity identity, LocalStorage localStorage) {
+
+        Keys givenKeys = identity.getKeys();
+        SerialNumber givenDeviceSerial = identity.getDeviceSerial();
+        Log.d(TAG, "Found keys/serial used for initialization");
+
+        boolean givenIdentityMatchesStoredIdentity = givenKeysMatchStoredKeys(givenKeys, localStorage) &&
+                givenDeviceSerialMatchesStoredDeviceSerial(givenDeviceSerial, localStorage);
+
+        boolean shouldResetLocalStorage = !givenIdentityMatchesStoredIdentity;
+
+        return shouldResetLocalStorage;
+    }
+
+    private boolean givenDeviceSerialMatchesStoredDeviceSerial(SerialNumber givenDeviceSerial, LocalStorage localStorage) {
+        Optional<SerialNumber> deviceSerialOptional = localStorage.findDeviceCertificate()
+                .map(DeviceCertificate::getDeviceSerial)
+                .map(Optional::fromNullable)
+                .onErrorReturn(e -> Optional.absent())
+                .defaultIfEmpty(Optional.absent())
+                .blockingFirst();
+
+        if (!deviceSerialOptional.isPresent()) {
+            return false;
+        }
+
+        SerialNumber storedDeviceSerial = deviceSerialOptional.get();
+
+        boolean matchesDeviceSerial = Arrays.equals(storedDeviceSerial.getSerialNumber(), givenDeviceSerial.getSerialNumber());
+
+        return matchesDeviceSerial;
+    }
+
+    private boolean givenKeysMatchStoredKeys(Keys givenKeys, LocalStorage localStorage) {
+        Optional<Keys> deviceKeysOptional = localStorage.findKeys()
+                .map(Optional::fromNullable)
+                .onErrorReturn(e -> Optional.absent())
+                .defaultIfEmpty(Optional.absent())
+                .blockingFirst();
+
+        if (!deviceKeysOptional.isPresent()) {
+            return false;
+        }
+
+        Keys deviceKeys = deviceKeysOptional.get();
+        boolean matchesPrivateKey = Arrays.equals(deviceKeys.getPrivateKey(), givenKeys.getPrivateKey());
+        boolean matchesPublicKey = Arrays.equals(deviceKeys.getPublicKey(), givenKeys.getPublicKey());
+        boolean matchesGivenKeys = matchesPrivateKey && matchesPublicKey;
+        Log.d(TAG, "Found already present keys! matchesGivenKeys=" + matchesGivenKeys);
+
+        return matchesGivenKeys;
     }
 
 }

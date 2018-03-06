@@ -18,14 +18,13 @@ import android.widget.TextView;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
-import org.amv.access.sdk.sample.R;
+import org.amv.access.sdk.sample.logic.CertificatesController;
+import org.amv.access.sdk.sample.logic.ICertificatesController;
+import org.amv.access.sdk.sample.logic.ICertificatesView;
 import org.amv.access.sdk.spi.certificate.AccessCertificate;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.error.AccessSdkException;
-import org.amv.access.sdk.sample.logic.CertificatesController;
-import org.amv.access.sdk.sample.logic.ICertificatesController;
-import org.amv.access.sdk.sample.logic.ICertificatesView;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -96,7 +95,7 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
                 .map(DeviceCertificate::getDeviceSerial)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(deviceSerial -> {
-                    titleText.setText(deviceSerial);
+                    titleText.setText(deviceSerial.getSerialNumberHex());
                     refreshButton.setVisibility(VISIBLE);
                     refreshButton.setEnabled(false);
 
@@ -207,7 +206,7 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
             final AccessCertificate cert = items.get(position).getDeviceAccessCertificate();
 
             TextView name = rowView.findViewById(R.id.name_text_view);
-            name.setText(cert.getGainerSerial());
+            name.setText(cert.getGainerSerial().getSerialNumberHex());
 
             TextView date = rowView.findViewById(R.id.date_text_view);
             String startDateTime = dateFormat.format(cert.getStartDate().getTime());
@@ -227,7 +226,8 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
             }
 
             ImageButton revokeButton = rowView.findViewById(R.id.revoke_button);
-            String revokeText = String.format(getString(R.string.revoke_alert_title), cert.getGainerSerial());
+            String revokeText = String.format(getString(R.string.revoke_alert_title), cert
+                    .getGainerSerial().getSerialNumberHex());
 
             revokeButton.setOnClickListener(view -> new AlertDialog.Builder(CertificatesActivity.this)
                     .setMessage(revokeText)

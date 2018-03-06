@@ -1,6 +1,9 @@
-package org.amv.access.sdk.hm.crypto;
+package org.amv.access.sdk.hm.identity;
 
 import com.highmobility.crypto.KeyPair;
+
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.crypto.impl.KeysImpl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

@@ -13,19 +13,22 @@ import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.hm.communication.HmCommandFactory;
 import org.amv.access.sdk.hm.config.AccessSdkOptions;
 import org.amv.access.sdk.hm.config.AccessSdkOptionsImpl;
-import org.amv.access.sdk.hm.crypto.Keys;
+import org.amv.access.sdk.hm.identity.HmIdentityManager;
 import org.amv.access.sdk.spi.AccessSdk;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.communication.CommunicationManagerFactory;
+import org.amv.access.sdk.spi.identity.IdentityManager;
+import org.amv.access.sdk.spi.crypto.Keys;
 
 import io.reactivex.Observable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AmvAccessSdk implements AccessSdk {
+    private static final String TAG = "AmvAccessSdk";
 
     public static AccessSdk create(Context context, AccessApiContext accessApiContext) {
         return create(context, AccessSdkOptionsImpl.builder()
@@ -45,6 +48,7 @@ public class AmvAccessSdk implements AccessSdk {
     private final AccessSdkOptions accessSdkOptions;
     private final Manager manager;
     private final LocalStorage localStorage;
+    private final HmIdentityManager identityManager;
     private final HmCertificateManager certificateManager;
     private final HmCommandFactory commandFactory;
 
@@ -52,11 +56,13 @@ public class AmvAccessSdk implements AccessSdk {
                  AccessSdkOptions accessSdkOptions,
                  Manager manager,
                  LocalStorage localStorage,
+                 HmIdentityManager identityManager,
                  HmCertificateManager certificateManager,
                  HmCommandFactory commandFactory) {
         this.context = checkNotNull(context);
         this.accessSdkOptions = checkNotNull(accessSdkOptions);
         this.manager = checkNotNull(manager);
+        this.identityManager = checkNotNull(identityManager);
         this.localStorage = checkNotNull(localStorage);
         this.certificateManager = checkNotNull(certificateManager);
         this.commandFactory = checkNotNull(commandFactory);
@@ -66,11 +72,17 @@ public class AmvAccessSdk implements AccessSdk {
     public Observable<Boolean> initialize() {
         return Observable.just(1)
                 .doOnNext(foo -> {
-                    Log.d("", "Initializing...");
+                    Log.d(TAG, "initialize");
                 })
                 .flatMap(foo -> certificateManager.initialize(context, accessSdkOptions))
                 .flatMap(foo -> initializeHmManager())
-                .map(foo -> true);
+                .map(foo -> true)
+                .doOnNext(foo -> Log.d(TAG, "initialize finished"));
+    }
+
+    @Override
+    public IdentityManager identityManager() {
+        return identityManager;
     }
 
     @Override

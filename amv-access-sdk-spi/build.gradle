@@ -1,4 +1,3 @@
-
 apply plugin: 'com.github.dcendents.android-maven' // needed for jitpack
 
 group = 'com.github.amv-networks.amv-access-sdk-android'
@@ -50,6 +49,8 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     testImplementation "junit:junit:${junitVersion}"
+    testImplementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
     androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"
 }

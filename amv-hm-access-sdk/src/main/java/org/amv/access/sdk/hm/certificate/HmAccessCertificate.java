@@ -1,8 +1,8 @@
 package org.amv.access.sdk.hm.certificate;
 
-import com.highmobility.utils.Bytes;
-
 import org.amv.access.sdk.spi.certificate.AccessCertificate;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.identity.impl.SerialNumberImpl;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -24,13 +24,17 @@ class HmAccessCertificate implements AccessCertificate {
     }
 
     @Override
-    public String getProviderSerial() {
-        return Bytes.hexFromBytes(delegate.getProviderSerial());
+    public SerialNumber getProviderSerial() {
+        return SerialNumberImpl.builder()
+                .serialNumber(delegate.getProviderSerial())
+                .build();
     }
 
     @Override
-    public String getGainerSerial() {
-        return Bytes.hexFromBytes(delegate.getGainerSerial());
+    public SerialNumber getGainerSerial() {
+        return SerialNumberImpl.builder()
+                .serialNumber(delegate.getGainerSerial())
+                .build();
     }
 
     @Override

@@ -71,6 +71,7 @@ dependencies {
 
     testImplementation "junit:junit:${junitVersion}"
     testImplementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
 
     androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"

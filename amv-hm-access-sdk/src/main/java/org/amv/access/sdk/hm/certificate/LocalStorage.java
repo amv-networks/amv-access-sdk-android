@@ -1,6 +1,6 @@
 package org.amv.access.sdk.hm.certificate;
 
-import org.amv.access.sdk.hm.crypto.Keys;
+import org.amv.access.sdk.spi.crypto.Keys;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 

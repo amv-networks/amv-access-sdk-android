@@ -6,15 +6,15 @@ import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.highmobility.crypto.DeviceCertificate;
-import com.highmobility.crypto.KeyPair;
 import com.highmobility.utils.Base64;
 
-import org.amv.access.sdk.hm.crypto.HmKeys;
-import org.amv.access.sdk.hm.crypto.Keys;
+import org.amv.access.sdk.hm.error.SdkNotInitializedException;
 import org.amv.access.sdk.hm.secure.SecureStorage;
 import org.amv.access.sdk.hm.secure.Storage;
 import org.amv.access.sdk.hm.util.Json;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.crypto.impl.KeysImpl;
 
 import java.lang.reflect.Type;
 import java.util.List;
@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -57,14 +58,16 @@ public class HmLocalStorage implements LocalStorage {
                 .flatMap(deviceCertOptional -> deviceCertOptional
                         .transform(DeviceCertificate::new)
                         .transform(HmDeviceCertificate::new)
-                        .transform(d -> (org.amv.access.sdk.spi.certificate.DeviceCertificate) d)
                         .transform(Observable::just)
-                        .or(() -> Observable.error(new IllegalStateException("No device certificate found"))))
+                        .or(() -> Observable.error(new SdkNotInitializedException("No device certificate found in local storage"))))
+                .cast(org.amv.access.sdk.spi.certificate.DeviceCertificate.class)
                 .doOnNext(deviceCertificate -> Log.d(TAG, "findDeviceCertificate finished: " + deviceCertificate.getDeviceSerial()));
     }
 
     @Override
     public Observable<Boolean> storeDeviceCertificate(org.amv.access.sdk.spi.certificate.DeviceCertificate deviceCertificate) {
+        checkNotNull(deviceCertificate);
+
         return Observable.just(deviceCertificate)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "storeDeviceCertificate"))
@@ -83,12 +86,14 @@ public class HmLocalStorage implements LocalStorage {
                 .flatMap(issuerKeyOptional -> issuerKeyOptional
                         .transform(Base64::decode)
                         .transform(Observable::just)
-                        .or(() -> Observable.error(new IllegalStateException("No issuer key found"))))
+                        .or(() -> Observable.error(new SdkNotInitializedException("No issuer key found in local storage"))))
                 .doOnNext(foo -> Log.d(TAG, "findIssuerPublicKey finished"));
     }
 
     @Override
     public Observable<Boolean> storeIssuerPublicKey(byte[] issuerPublicKey) {
+        checkNotNull(issuerPublicKey);
+
         return Observable.just(issuerPublicKey)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "storeIssuerPublicKey"))
@@ -116,16 +121,25 @@ public class HmLocalStorage implements LocalStorage {
                             .map(Base64::decode)
                             .singleOrError();
 
-                    return getPrivateKeyOrThrow.zipWith(getPublicKeyOrThrow, KeyPair::new)
+                    BiFunction<byte[], byte[], KeysImpl> keysZipper = (privateKey, publicKey) ->
+                            KeysImpl.builder()
+                                    .publicKey(publicKey)
+                                    .privateKey(privateKey)
+                                    .build();
+                    return getPrivateKeyOrThrow.zipWith(getPublicKeyOrThrow, keysZipper)
                             .toObservable();
                 })
-                .map(HmKeys::create)
                 .cast(Keys.class)
+                .onErrorResumeNext(e -> {
+                    return Observable.error(new SdkNotInitializedException(e));
+                })
                 .doOnNext(foo -> Log.d(TAG, "findKeys finished"));
     }
 
     @Override
     public Observable<Boolean> storeKeys(Keys keys) {
+        checkNotNull(keys);
+
         return Observable.just(keys)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "storeKeys"))
@@ -166,7 +180,9 @@ public class HmLocalStorage implements LocalStorage {
 
     @Override
     public Observable<Boolean> storeAccessCertificates(List<AccessCertificatePair> certificates) {
-        return Observable.fromIterable(checkNotNull(certificates))
+        checkNotNull(certificates);
+
+        return Observable.fromIterable(certificates)
                 .subscribeOn(SCHEDULER)
                 .map(SerializableAccessCertificatePair::from)
                 .toList()

@@ -14,10 +14,11 @@ import org.amv.access.client.android.model.CreateDeviceCertificateRequestDto;
 import org.amv.access.client.android.model.DeviceCertificateDto;
 import org.amv.access.client.android.model.ErrorResponseDto;
 import org.amv.access.sdk.hm.AccessApiContext;
-import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.hm.error.CertificateRevokeException;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
@@ -70,6 +71,33 @@ public class AmvHmRemote implements Remote {
     }
 
     @Override
+    public Observable<DeviceCertificateWithIssuerKey> downloadDeviceCertificate(Keys keys,
+                                                                                SerialNumber deviceSerial) {
+        checkNotNull(deviceSerial);
+        checkNotNull(keys);
+
+        return Observable.just(1)
+                .subscribeOn(SCHEDULER)
+                .doOnNext(foo -> Log.d(TAG, "downloadDeviceCertificate"))
+                .flatMap(foo -> {
+                    DeviceCertClient deviceCertClient = Clients.simpleDeviceCertClient(accessApiContext.getBaseUrl());
+
+                    String[] nonce = createNonceAndSignature(keys);
+
+                    return deviceCertClient.fetchDeviceCertificate(
+                            nonce[0], nonce[1], deviceSerial.getSerialNumberHex());
+                })
+                .onErrorResumeNext(e -> {
+                    String errorMessage = getErrorMessage(e);
+                    return Observable.error(new RuntimeException(errorMessage, e));
+                })
+                .map(val -> val.device_certificate)
+                .map(AmvDeviceCertificateWithIssuerKey::new)
+                .cast(DeviceCertificateWithIssuerKey.class)
+                .doOnNext(foo -> Log.d(TAG, "downloadDeviceCertificate finished"));
+    }
+
+    @Override
     public Observable<AccessCertificatePair> downloadAccessCertificates(Keys keys, DeviceCertificate deviceCertificate) {
         checkNotNull(keys);
         checkNotNull(deviceCertificate);
@@ -82,7 +110,9 @@ public class AmvHmRemote implements Remote {
 
                     String[] nonce = createNonceAndSignature(keys);
 
-                    return client.fetchAccessCertificates(nonce[0], nonce[1], deviceCertificate.getDeviceSerial());
+                    String serialNumberHex = deviceCertificate
+                            .getDeviceSerial().getSerialNumberHex();
+                    return client.fetchAccessCertificates(nonce[0], nonce[1], serialNumberHex);
                 })
                 .onErrorResumeNext(e -> {
                     String errorMessage = getErrorMessage(e);

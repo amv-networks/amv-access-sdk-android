@@ -18,4 +18,8 @@ public class SdkNotInitializedException extends AccessSdkException {
     public SdkNotInitializedException(Throwable cause) {
         super(TYPE, cause);
     }
+
+    public SdkNotInitializedException(String message) {
+        this(new IllegalStateException(message));
+    }
 }

@@ -6,14 +6,11 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import com.google.common.base.Optional;
-import com.highmobility.utils.Bytes;
 
 import org.amv.access.sdk.hm.AccessApiContext;
 import org.amv.access.sdk.hm.AmvAccessSdk;
 import org.amv.access.sdk.hm.config.AccessSdkOptions;
 import org.amv.access.sdk.hm.config.AccessSdkOptionsImpl;
-import org.amv.access.sdk.hm.config.UserIdentityImpl;
-import org.amv.access.sdk.hm.crypto.KeysImpl;
 import org.amv.access.sdk.sample.logic.AmvSdkInitializer;
 import org.amv.access.sdk.spi.AccessSdk;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
@@ -22,6 +19,8 @@ import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.communication.CommandFactory;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.identity.Identity;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -40,9 +39,6 @@ import static org.junit.Assert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) // run the cert delete last
 @RunWith(AndroidJUnit4.class)
 public class AmvAccessSdkTest {
-    private static final String SAMPLE_DEVICE_SERIAL = "44dc3353a4bbd61695";
-    private static final String SAMPLE_PUBLIC_KEY_IN_HEX = "ECFB189204A7575D15B43C6BB8681BE3F88C03B36B7520ECCCFDC7E5FD4282A5BF320C2A7017231CDECBB0DB6A20A371B61983B05A5B302DF488941F5C9CFABA";
-    private static final String SAMPLE_PRIVATE_KEY_IN_HEX = "19BA16FF9D7498189FC7F15E43926A6313A383C87209C2EA696A06C3B17BC602";
 
     @Test
     public void useAppContext() throws Exception {
@@ -68,7 +64,8 @@ public class AmvAccessSdkTest {
 
     @Test
     public void initAmvAccessSdkWithExistingKeys() throws Exception {
-        initAmvAccessSdk(); // init without keys before overwriting with given ones
+        // init without keys before initializing with given ones
+        Identity sampleIdentity = getOrCreateUserIdentity();
 
         Context appContext = InstrumentationRegistry.getTargetContext();
 
@@ -76,10 +73,7 @@ public class AmvAccessSdkTest {
 
         AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
                 .accessApiContext(accessApiContext)
-                .userIdentity(UserIdentityImpl.builder()
-                        .deviceSerial(Bytes.bytesFromHex(SAMPLE_DEVICE_SERIAL))
-                        .keys(new KeysImpl(Bytes.bytesFromHex(SAMPLE_PUBLIC_KEY_IN_HEX), Bytes.bytesFromHex(SAMPLE_PRIVATE_KEY_IN_HEX)))
-                        .build())
+                .userIdentity(sampleIdentity)
                 .build();
 
         AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
@@ -87,13 +81,24 @@ public class AmvAccessSdkTest {
         accessSdk.initialize().blockingFirst();
 
         assertThat(accessSdk, is(notNullValue()));
+
+        Identity identity = accessSdk.identityManager()
+                .findIdentity()
+                .blockingFirst();
+
+        assertThat(identity.getDeviceSerial().getSerialNumberHex(),
+                is(sampleIdentity.getDeviceSerial().getSerialNumberHex()));
+        assertThat(identity.getKeys().getPrivateKeyHex(),
+                is(sampleIdentity.getKeys().getPrivateKeyHex()));
+        assertThat(identity.getKeys().getPublicKeyHex(),
+                is(sampleIdentity.getKeys().getPublicKeyHex()));
     }
 
     @Test
     public void findDeviceSerialNumber() throws Exception {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        String deviceSerial = AmvSdkInitializer.create(appContext)
+        SerialNumber deviceSerial = AmvSdkInitializer.create(appContext)
                 .map(AccessSdk::certificateManager)
                 .flatMap(CertificateManager::getDeviceCertificate)
                 .map(DeviceCertificate::getDeviceSerial)
@@ -183,10 +188,21 @@ public class AmvAccessSdkTest {
                 .blockingGet();
 
         communicationManager.startConnecting(accessCertificatePair)
-                .subscribe(success -> {
-                    Log.i("", "Started connecting");
-                });
+                .subscribe(success -> Log.i("", "Started connecting"));
 
         countDownLatch.await();
+    }
+
+    private Identity getOrCreateUserIdentity() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
+                .accessApiContext(AmvSdkInitializer.createAccessApiContext(appContext))
+                .build();
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
+
+        accessSdk.initialize().blockingFirst();
+
+        return accessSdk.identityManager().findIdentity().blockingFirst();
     }
 }

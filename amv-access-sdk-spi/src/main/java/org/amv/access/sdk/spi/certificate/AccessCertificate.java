@@ -1,5 +1,7 @@
 package org.amv.access.sdk.spi.certificate;
 
+import org.amv.access.sdk.spi.identity.SerialNumber;
+
 import java.util.Calendar;
 
 /**
@@ -9,9 +11,9 @@ public interface AccessCertificate {
 
     byte[] toByteArray();
 
-    String getProviderSerial();
+    SerialNumber getProviderSerial();
 
-    String getGainerSerial();
+    SerialNumber getGainerSerial();
 
     Calendar getStartDate();
 

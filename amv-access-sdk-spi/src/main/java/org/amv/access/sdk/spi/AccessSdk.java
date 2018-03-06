@@ -4,6 +4,7 @@ import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.communication.CommunicationManagerFactory;
+import org.amv.access.sdk.spi.identity.IdentityManager;
 
 import io.reactivex.Observable;
 
@@ -16,6 +17,13 @@ public interface AccessSdk {
      * @return an observable that completes on successful initialization
      */
     Observable<Boolean> initialize();
+
+    /**
+     * Provides a mechanism to handle and manage identities.
+     *
+     * @return an instance of IdentityManager
+     */
+    IdentityManager identityManager();
 
     /**
      * Provides a mechanism to handle and manage certificates.

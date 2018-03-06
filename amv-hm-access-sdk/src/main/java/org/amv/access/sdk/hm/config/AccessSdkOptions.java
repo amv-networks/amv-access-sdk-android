@@ -3,16 +3,14 @@ package org.amv.access.sdk.hm.config;
 import com.google.common.base.Optional;
 
 import org.amv.access.sdk.hm.AccessApiContext;
-import org.amv.access.sdk.hm.crypto.Keys;
-import org.amv.access.sdk.hm.secure.Codec;
+import org.amv.access.sdk.hm.certificate.Remote;
+import org.amv.access.sdk.spi.identity.Identity;
 
 public interface AccessSdkOptions {
 
     AccessApiContext getAccessApiContext();
 
-    String getSharedPreferencesName();
+    Optional<Identity> getIdentity();
 
-    Optional<Codec> getSecureStorageCodec();
-
-    Optional<UserIdentity> getUserIdentity();
+    Optional<Remote> getRemote();
 }

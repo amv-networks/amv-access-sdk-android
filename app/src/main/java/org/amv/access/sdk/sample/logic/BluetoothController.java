@@ -82,7 +82,8 @@ public class BluetoothController implements IBluetoothController {
 
         view.setVehicleSerial(this.accessCertificatePair
                 .getDeviceAccessCertificate()
-                .getGainerSerial());
+                .getGainerSerial()
+                .getSerialNumberHex());
 
         this.communicationManager = this.accessSdk
                 .bluetoothCommunicationManagerFactory()

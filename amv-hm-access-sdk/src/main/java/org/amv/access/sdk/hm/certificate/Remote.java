@@ -1,8 +1,9 @@
 package org.amv.access.sdk.hm.certificate;
 
-import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import io.reactivex.Observable;
 
@@ -14,6 +15,15 @@ public interface Remote {
      * @return an observable emitting the device certificate including the issuer key
      */
     Observable<DeviceCertificateWithIssuerKey> createDeviceCertificate(Keys keys);
+
+    /**
+     * Request an existing device certificate from the remote exchange.
+     *
+     * @param keys         The key pair associated with this device
+     * @param deviceSerial The device serial
+     * @return an observable emitting the device certificate including the issuer key
+     */
+    Observable<DeviceCertificateWithIssuerKey> downloadDeviceCertificate(Keys keys, SerialNumber deviceSerial);
 
     /**
      * Download all access certificates for this device present on the remote exchange.

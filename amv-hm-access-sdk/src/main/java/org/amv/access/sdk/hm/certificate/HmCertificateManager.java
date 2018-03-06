@@ -8,18 +8,18 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.highmobility.crypto.Crypto;
 
 import org.amv.access.sdk.hm.config.AccessSdkOptions;
-import org.amv.access.sdk.hm.config.UserIdentity;
-import org.amv.access.sdk.hm.crypto.HmKeys;
-import org.amv.access.sdk.hm.crypto.Keys;
 import org.amv.access.sdk.hm.error.CertificateDownloadException;
 import org.amv.access.sdk.hm.error.CertificateRevokeException;
 import org.amv.access.sdk.hm.error.CreateKeysFailedException;
 import org.amv.access.sdk.hm.error.InvalidCertificateException;
-import org.amv.access.sdk.hm.error.SdkNotInitializedException;
+import org.amv.access.sdk.hm.identity.HmKeys;
 import org.amv.access.sdk.spi.certificate.AccessCertificate;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
+import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.identity.Identity;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -50,7 +50,7 @@ public class HmCertificateManager implements CertificateManager {
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
                 .flatMap(foo -> findOrCreateKeys(accessSdkOptions))
-                .flatMap(this::findLocallyOrDownloadDeviceCertificateWithIssuerKey)
+                .flatMap(keys -> findLocallyOrDownloadDeviceCertificateWithIssuerKey(accessSdkOptions, keys))
                 .map(foo -> true)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));
     }
@@ -84,9 +84,6 @@ public class HmCertificateManager implements CertificateManager {
                 .subscribeOn(SCHEDULER)
                 .flatMap(foo -> localStorage.findDeviceCertificate())
                 .zipWith(localStorage.findKeys(), Pair::create)
-                .onErrorResumeNext(e -> {
-                    return Observable.error(new SdkNotInitializedException(e));
-                })
                 .flatMap(pair -> {
                     DeviceCertificate deviceCertificate = pair.first;
                     AccessCertificate accessCertificate = accessCertificatePair.getDeviceAccessCertificate();
@@ -114,9 +111,6 @@ public class HmCertificateManager implements CertificateManager {
                 .doOnNext(foo -> Log.d(TAG, "refreshAccessCertificates"))
                 .flatMap(foo -> localStorage.findDeviceCertificate())
                 .zipWith(localStorage.findKeys(), Pair::create)
-                .onErrorResumeNext(e -> {
-                    return Observable.error(new SdkNotInitializedException(e));
-                })
                 .flatMap(val -> remote.downloadAccessCertificates(val.second, val.first))
                 .onErrorResumeNext(e -> {
                     return Observable.error(new CertificateDownloadException(e));
@@ -128,27 +122,63 @@ public class HmCertificateManager implements CertificateManager {
                         .flatMap(foo -> localStorage.findAccessCertificates()));
     }
 
-    private Observable<DeviceCertificateWithIssuerKey> findLocallyOrDownloadDeviceCertificateWithIssuerKey(Keys keys) {
-        return findDeviceCertificateWithIssuerKeyLocally()
+    private Observable<DeviceCertificateWithIssuerKey> findLocallyOrDownloadDeviceCertificateWithIssuerKey(
+            AccessSdkOptions accessSdkOptions, Keys keys) {
+        return findDeviceCertificateWithIssuerKeyLocally(accessSdkOptions)
                 // if device cert does not exist, download and store it
-                .onErrorResumeNext(downloadDeviceCertificateWithIssuerKey(keys));
+                .onErrorResumeNext(downloadAndStoreDeviceCertificateWithIssuerKey(accessSdkOptions, keys));
     }
 
-    private Observable<DeviceCertificateWithIssuerKey> findDeviceCertificateWithIssuerKeyLocally() {
+    private Observable<DeviceCertificateWithIssuerKey> findDeviceCertificateWithIssuerKeyLocally(
+            AccessSdkOptions accessSdkOptions) {
         return localStorage.findDeviceCertificate()
                 .zipWith(localStorage.findIssuerPublicKey(), Pair::create)
                 .map(deviceCertificateAndKey -> new HmDeviceCertificateWithIssuerKey(
                         deviceCertificateAndKey.first,
                         deviceCertificateAndKey.second))
-                .map(val -> (DeviceCertificateWithIssuerKey) val);
+                .map(val -> (DeviceCertificateWithIssuerKey) val)
+                .flatMap(f -> {
+                    if (accessSdkOptions.getIdentity().isPresent()) {
+                        String deviceSerial = accessSdkOptions.getIdentity()
+                                .transform(Identity::getDeviceSerial)
+                                .transform(SerialNumber::getSerialNumberHex)
+                                .get();
+
+                        boolean matchesDeviceSerial = f.getDeviceCertificate()
+                                .getDeviceSerial()
+                                .getSerialNumberHex()
+                                .equalsIgnoreCase(deviceSerial);
+
+                        if (!matchesDeviceSerial) {
+                            return Observable.error(new RuntimeException("Stored device cert does not match given identity"));
+                        }
+                    }
+                    return Observable.just(f);
+                });
     }
 
-    private Observable<DeviceCertificateWithIssuerKey> downloadDeviceCertificateWithIssuerKey(Keys keys) {
-        return remote.createDeviceCertificate(keys)
+    private Observable<DeviceCertificateWithIssuerKey> downloadAndStoreDeviceCertificateWithIssuerKey(
+            AccessSdkOptions accessSdkOptions, Keys keys) {
+        return downloadOrCreateDeviceCertificateWithIssuerKeyRemote(accessSdkOptions, keys)
                 .flatMap(dc -> localStorage.storeDeviceCertificate(dc.getDeviceCertificate())
                         .map(foo -> dc))
                 .flatMap(dc -> localStorage.storeIssuerPublicKey(dc.getIssuerPublicKey())
                         .map(foo -> dc));
+    }
+
+    private Observable<DeviceCertificateWithIssuerKey> downloadOrCreateDeviceCertificateWithIssuerKeyRemote(
+            AccessSdkOptions accessSdkOptions, Keys keys) {
+
+        boolean initWithIdentity = accessSdkOptions.getIdentity().isPresent();
+        if (initWithIdentity) {
+            SerialNumber deviceSerial = accessSdkOptions.getIdentity()
+                    .transform(Identity::getDeviceSerial)
+                    .get();
+
+            return remote.downloadDeviceCertificate(keys, deviceSerial);
+        } else {
+            return remote.createDeviceCertificate(keys);
+        }
     }
 
     private Observable<Keys> findOrCreateKeys(AccessSdkOptions accessSdkOptions) {
@@ -168,8 +198,8 @@ public class HmCertificateManager implements CertificateManager {
     private Observable<Keys> createAndStoreKeys(AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
                 .doOnNext(foo -> Log.d(TAG, "createKeys"))
-                .map(foo -> accessSdkOptions.getUserIdentity()
-                        .transform(UserIdentity::getKeys)
+                .map(foo -> accessSdkOptions.getIdentity()
+                        .transform(Identity::getKeys)
                         .or(() -> HmKeys.create(Crypto.createKeypair())))
                 .flatMap(localStorage::storeKeys)
                 .doOnNext(foo -> Log.d(TAG, "createKeys finished"))

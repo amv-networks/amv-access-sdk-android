@@ -76,7 +76,7 @@ public class AppActivitiesSmokeTest {
                 .getDeviceCertificate()
                 .blockingFirst();
 
-        String serial = cert.getDeviceSerial();
+        String serial = cert.getDeviceSerial().getSerialNumberHex();
         onView(withId(R.id.title_button)).check(matches(withText(serial)));
     }
 
@@ -96,7 +96,7 @@ public class AppActivitiesSmokeTest {
                 .inAdapterView(withId(R.id.certificates_list_view))
                 .atPosition(0)
                 .onChildView(withId(R.id.name_text_view))
-                .check(matches(withText(cert.getDeviceAccessCertificate().getGainerSerial())));
+                .check(matches(withText(cert.getDeviceAccessCertificate().getGainerSerial().getSerialNumberHex())));
 
         onView(withId(R.id.certificates_list_view)).check(ViewAssertions.matches(withListSize(adapter.getItems().size())));
 
@@ -113,7 +113,7 @@ public class AppActivitiesSmokeTest {
                 .atPosition(0).perform(click());
         intended(hasComponent(BroadcastActivity.class.getName()));
 
-        String serial = cert.getDeviceAccessCertificate().getGainerSerial();
+        String serial = cert.getDeviceAccessCertificate().getGainerSerial().getSerialNumberHex();
         onView(withId(R.id.title_button)).check(matches(withText(serial)));
     }
 
@@ -124,7 +124,9 @@ public class AppActivitiesSmokeTest {
         CertificatesActivity.CertificatesAdapter adapter = mainActivityActivityTestRule.getActivity().adapter;
 
         AccessCertificatePair cert = (AccessCertificatePair) adapter.getItem(0);
-        String serialToDelete = cert.getDeviceAccessCertificate().getGainerSerial();
+        String serialToDelete = cert.getDeviceAccessCertificate()
+                .getGainerSerial()
+                .getSerialNumberHex();
         onView(withText(serialToDelete)).check(matches(isDisplayed()));
         int countBeforeDelete = adapter.getCount();
 
