@@ -16,7 +16,7 @@ public interface AccessSdk {
      *
      * @return an observable that completes on successful initialization
      */
-    Observable<Boolean> initialize();
+    Observable<AccessSdk> initialize();
 
     /**
      * Provides a mechanism to handle and manage identities.

@@ -20,8 +20,8 @@ import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.communication.CommunicationManagerFactory;
-import org.amv.access.sdk.spi.identity.IdentityManager;
 import org.amv.access.sdk.spi.crypto.Keys;
+import org.amv.access.sdk.spi.identity.IdentityManager;
 
 import io.reactivex.Observable;
 
@@ -69,14 +69,15 @@ public class AmvAccessSdk implements AccessSdk {
     }
 
     @Override
-    public Observable<Boolean> initialize() {
+    public Observable<AccessSdk> initialize() {
         return Observable.just(1)
                 .doOnNext(foo -> {
                     Log.d(TAG, "initialize");
                 })
                 .flatMap(foo -> certificateManager.initialize(context, accessSdkOptions))
                 .flatMap(foo -> initializeHmManager())
-                .map(foo -> true)
+                .map(foo -> this)
+                .cast(AccessSdk.class)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));
     }
 

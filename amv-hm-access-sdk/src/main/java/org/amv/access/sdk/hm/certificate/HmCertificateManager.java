@@ -18,8 +18,8 @@ import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.crypto.Keys;
-import org.amv.access.sdk.spi.identity.SerialNumber;
 import org.amv.access.sdk.spi.identity.Identity;
+import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -45,13 +45,14 @@ public class HmCertificateManager implements CertificateManager {
         this.remote = checkNotNull(remote);
     }
 
-    public Observable<Boolean> initialize(Context context, AccessSdkOptions accessSdkOptions) {
+    public Observable<CertificateManager> initialize(Context context, AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
                 .flatMap(foo -> findOrCreateKeys(accessSdkOptions))
                 .flatMap(keys -> findLocallyOrDownloadDeviceCertificateWithIssuerKey(accessSdkOptions, keys))
-                .map(foo -> true)
+                .map(foo -> this)
+                .cast(CertificateManager.class)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));
     }
 

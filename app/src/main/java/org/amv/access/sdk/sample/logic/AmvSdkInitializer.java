@@ -57,9 +57,7 @@ public final class AmvSdkInitializer {
 
             INSTANCE.set(accessSdk);
 
-            return accessSdk
-                    .initialize()
-                    .map(foo -> accessSdk);
+            return accessSdk.initialize();
         } catch (Exception e) {
             return Observable.error(e);
         }

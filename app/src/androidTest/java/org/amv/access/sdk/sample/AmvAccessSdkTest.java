@@ -55,9 +55,9 @@ public class AmvAccessSdkTest {
                 .accessApiContext(AmvSdkInitializer.createAccessApiContext(appContext))
                 .build();
 
-        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
-
-        accessSdk.initialize().blockingFirst();
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions)
+                .initialize()
+                .blockingFirst();
 
         assertThat(accessSdk, is(notNullValue()));
     }
@@ -73,12 +73,12 @@ public class AmvAccessSdkTest {
 
         AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
                 .accessApiContext(accessApiContext)
-                .userIdentity(sampleIdentity)
+                .identity(sampleIdentity)
                 .build();
 
-        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
-
-        accessSdk.initialize().blockingFirst();
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions)
+                .initialize()
+                .blockingFirst();
 
         assertThat(accessSdk, is(notNullValue()));
 
@@ -129,10 +129,8 @@ public class AmvAccessSdkTest {
 
         Log.d("", "Create AccessSdk instance");
         AccessSdk accessSdk = AmvSdkInitializer.create(appContext)
+                .flatMap(AccessSdk::initialize)
                 .blockingFirst();
-
-        Log.d("", "Initialize AccessSdk");
-        accessSdk.initialize().blockingFirst();
 
         Log.d("", "Create CommandFactory");
         CommandFactory commandFactory = accessSdk.commandFactory();
@@ -199,9 +197,9 @@ public class AmvAccessSdkTest {
         AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
                 .accessApiContext(AmvSdkInitializer.createAccessApiContext(appContext))
                 .build();
-        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions);
-
-        accessSdk.initialize().blockingFirst();
+        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions)
+                .initialize()
+                .blockingFirst();
 
         return accessSdk.identityManager().findIdentity().blockingFirst();
     }
