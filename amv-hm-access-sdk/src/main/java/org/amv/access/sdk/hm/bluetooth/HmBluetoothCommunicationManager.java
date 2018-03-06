@@ -108,12 +108,10 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     public Observable<Boolean> terminate() {
         Observable<Boolean> sendDisconnectCommandAndContinueOnError = this
                 .sendCommand(this.commandFactory.disconnect())
-                .timeout(1, TimeUnit.SECONDS)
                 .onErrorReturnItem(true);
 
         return sendDisconnectCommandAndContinueOnError
                 .flatMap(foo -> this.broadcaster.terminate())
-                .timeout(1, TimeUnit.SECONDS)
                 .doOnError(e -> terminateInternal())
                 .doOnNext(next -> terminateInternal());
     }
