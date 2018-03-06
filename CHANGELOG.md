@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- Support for initializing SDK with existing User Identity
+- Support for initializing SDK with existing identity
+
+### Changed
+- **BREAKING**: Use `SerialNumber` instead of plain strings
+- **BREAKING**: Return `AccessSdk` instance from method `AccessSdk#initialize`
 
 ## [0.0.4] - 2018-02-23
 ### Fixed
