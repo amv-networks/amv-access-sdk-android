@@ -16,7 +16,8 @@ public class SimpleMapStorage implements SecureStorage {
 
     @Override
     public Observable<Optional<String>> findString(String key) {
-        return Observable.just(Optional.fromNullable(map.get(key)));
+        return Observable.just(1)
+                .map(foo -> Optional.fromNullable(map.get(key)));
     }
 
     @Override
@@ -24,5 +25,11 @@ public class SimpleMapStorage implements SecureStorage {
         return Observable.just(Pair.of(key, value))
                 .doOnNext(keyValPair -> map.put(keyValPair.getKey(), keyValPair.getValue()))
                 .map(foo -> true);
+    }
+
+    @Override
+    public Observable<Optional<String>> removeString(String key) {
+        return Observable.just(1)
+                .map(foo -> Optional.fromNullable(map.remove(key)));
     }
 }

@@ -204,4 +204,19 @@ public class HmLocalStorage implements LocalStorage {
                 .flatMapObservable(this::storeAccessCertificates)
                 .doOnNext(foo -> Log.d(TAG, "removeAccessCertificateById finished"));
     }
+
+    @Override
+    public Observable<Boolean> reset() {
+        return Observable.just(true)
+                .doOnNext(foo -> reset(storage))
+                .doOnNext(foo -> reset(secureStorage));
+    }
+
+    private void reset(Storage storage) {
+        storage.removeString(KEY_DEVICE_CERTIFICATE).blockingFirst();
+        storage.removeString(KEY_ACCESS_CERTIFICATES).blockingFirst();
+        storage.removeString(KEY_PRIVATE_KEY).blockingFirst();
+        storage.removeString(KEY_PUBLIC_KEY).blockingFirst();
+        storage.removeString(KEY_ISSUER_PUBLIC_KEY).blockingFirst();
+    }
 }

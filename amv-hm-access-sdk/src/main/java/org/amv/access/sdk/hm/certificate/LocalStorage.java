@@ -27,4 +27,6 @@ public interface LocalStorage {
     Observable<AccessCertificatePair> findAccessCertificates();
 
     Observable<Boolean> removeAccessCertificateById(String accessCertificateId);
+
+    Observable<Boolean> reset();
 }

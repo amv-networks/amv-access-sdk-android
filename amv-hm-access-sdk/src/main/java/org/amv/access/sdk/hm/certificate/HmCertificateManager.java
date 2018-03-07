@@ -51,6 +51,10 @@ public class HmCertificateManager implements CertificateManager {
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
                 .flatMap(foo -> findOrCreateKeys(accessSdkOptions))
                 .flatMap(keys -> findLocallyOrDownloadDeviceCertificateWithIssuerKey(accessSdkOptions, keys))
+                .doOnError(e -> {
+                    Log.i(TAG, "Resetting local storage because of error during init process");
+                    this.localStorage.reset().blockingFirst();
+                })
                 .map(foo -> this)
                 .cast(CertificateManager.class)
                 .doOnNext(foo -> Log.d(TAG, "initialize finished"));

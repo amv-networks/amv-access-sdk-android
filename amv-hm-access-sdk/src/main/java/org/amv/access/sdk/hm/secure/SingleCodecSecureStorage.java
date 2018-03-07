@@ -29,4 +29,11 @@ public class SingleCodecSecureStorage implements Storage, SecureStorage {
                 .map(foo -> codec.encryptData(key, value))
                 .flatMap(encryptedValue -> storage.storeString(key, encryptedValue));
     }
+
+    @Override
+    public Observable<Optional<String>> removeString(String key) {
+        return Observable.just(1)
+                .flatMap(foo -> storage.removeString(key))
+                .map(val -> val.transform(v -> codec.decryptData(key, v)));
+    }
 }

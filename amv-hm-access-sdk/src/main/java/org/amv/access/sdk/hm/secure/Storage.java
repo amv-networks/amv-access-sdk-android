@@ -8,4 +8,6 @@ public interface Storage {
     Observable<Optional<String>> findString(String key);
 
     Observable<Boolean> storeString(String key, String value);
+
+    Observable<Optional<String>> removeString(String key);
 }

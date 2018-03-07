@@ -35,6 +35,14 @@ public class SharedPreferencesStorage implements Storage {
                 });
     }
 
+    @Override
+    public Observable<Optional<String>> removeString(String key) {
+        return findString(key)
+                .doOnNext(val -> {
+                    sharedPreferences.edit().remove(key).commit();
+                });
+    }
+
     private Optional<String> findStringInternal(String key) {
         checkNotNull(key);
 

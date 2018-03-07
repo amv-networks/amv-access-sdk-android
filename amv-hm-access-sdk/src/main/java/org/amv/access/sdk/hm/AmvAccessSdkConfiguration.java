@@ -30,8 +30,8 @@ import org.amv.access.sdk.hm.secure.Storage;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.crypto.Keys;
-import org.amv.access.sdk.spi.identity.SerialNumber;
 import org.amv.access.sdk.spi.identity.Identity;
+import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import java.util.Arrays;
 
@@ -92,15 +92,15 @@ class AmvAccessSdkConfiguration {
         SharedPreferences sharedPreferences = getSharedPreferences();
         SharedPreferencesStorage sharedPreferencesStorage = sharedPreferencesStorage(sharedPreferences);
         SecureStorage secureStorage = secureStorage(sharedPreferencesStorage);
-        Storage plaintextStoreage = plaintextStorage(sharedPreferencesStorage);
-        HmLocalStorage hmLocalStorage = new HmLocalStorage(secureStorage, plaintextStoreage);
+        Storage plainStorage = plainStorage(sharedPreferencesStorage);
+        HmLocalStorage hmLocalStorage = new HmLocalStorage(secureStorage, plainStorage);
 
-        resetSharedPreferencesOnMismatchingIdentity(sharedPreferences, hmLocalStorage);
+        resetSharedPreferencesOnMismatchingIdentity(hmLocalStorage);
 
         return hmLocalStorage;
     }
 
-    private Storage plaintextStorage(SharedPreferencesStorage sharedPreferencesStorage) {
+    private Storage plainStorage(SharedPreferencesStorage sharedPreferencesStorage) {
         return new SingleCodecSecureStorage(sharedPreferencesStorage, new PlaintextCodec());
     }
 
@@ -124,8 +124,7 @@ class AmvAccessSdkConfiguration {
         return new ConcealCodec(crypto);
     }
 
-    private void resetSharedPreferencesOnMismatchingIdentity(SharedPreferences sharedPreferences,
-                                                             LocalStorage localStorage) {
+    private void resetSharedPreferencesOnMismatchingIdentity(LocalStorage localStorage) {
         Optional<Identity> userIdentityOptional = accessSdkOptions.getIdentity();
         if (!userIdentityOptional.isPresent()) {
             return;
@@ -137,7 +136,7 @@ class AmvAccessSdkConfiguration {
         boolean shouldResetLocalStorage = shouldResetLocalStorage(identity, localStorage);
         if (shouldResetLocalStorage) {
             Log.d(TAG, "Resetting shared preferences of LocalStorage");
-            sharedPreferences.edit().clear().commit();
+            localStorage.reset().blockingFirst();
         }
     }
 

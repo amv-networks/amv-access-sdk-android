@@ -5,7 +5,11 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Optional;
+import com.google.common.io.BaseEncoding;
+
+import junit.framework.Assert;
 
 import org.amv.access.sdk.hm.AccessApiContext;
 import org.amv.access.sdk.hm.AmvAccessSdk;
@@ -19,8 +23,12 @@ import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.communication.CommandFactory;
-import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.crypto.impl.KeysImpl;
 import org.amv.access.sdk.spi.identity.Identity;
+import org.amv.access.sdk.spi.identity.IdentityManager;
+import org.amv.access.sdk.spi.identity.SerialNumber;
+import org.amv.access.sdk.spi.identity.impl.IdentityImpl;
+import org.amv.access.sdk.spi.identity.impl.SerialNumberImpl;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -39,6 +47,7 @@ import static org.junit.Assert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING) // run the cert delete last
 @RunWith(AndroidJUnit4.class)
 public class AmvAccessSdkTest {
+    private final static CharMatcher HEX_MATCHER = CharMatcher.anyOf("0123456789abcdef");
 
     @Test
     public void useAppContext() throws Exception {
@@ -48,22 +57,69 @@ public class AmvAccessSdkTest {
     }
 
     @Test
-    public void initAmvAccessSdk() throws Exception {
+    public void a1_itShouldFailInitProcessWithNonExistingIdentity() throws Exception {
+        BaseEncoding base16 = BaseEncoding.base16().lowerCase();
+
+        Identity nonExistingIdentity = IdentityImpl.builder()
+                .deviceSerial(SerialNumberImpl.builder()
+                        .serialNumber(base16.decode("00123456789abcdef0"))
+                        .build())
+                .keys(KeysImpl.builder()
+                        .privateKey(base16.decode("00123456789abcdef0"))
+                        .publicKey(base16.decode("00123456789abcdef0"))
+                        .build())
+                .build();
+
+        Context appContext = InstrumentationRegistry.getTargetContext();
+
+        AccessApiContext accessApiContext = AmvSdkInitializer.createAccessApiContext(appContext);
+
+        AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
+                .accessApiContext(accessApiContext)
+                .identity(nonExistingIdentity)
+                .build();
+
+        try {
+            AmvAccessSdk.create(appContext, accessSdkOptions)
+                    .initialize()
+                    .blockingFirst();
+
+            Assert.fail("Should have thrown exception");
+        } catch (Exception e) {
+            assertThat(e.getMessage(), is("NotFoundException: DeviceEntity not found"));
+        }
+    }
+
+    @Test
+    public void a2_itShouldInitSdkSuccessfully() throws Exception {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
         AccessSdkOptions accessSdkOptions = AccessSdkOptionsImpl.builder()
                 .accessApiContext(AmvSdkInitializer.createAccessApiContext(appContext))
                 .build();
 
-        AccessSdk accessSdk = AmvAccessSdk.create(appContext, accessSdkOptions)
+        IdentityManager identityManager = AmvAccessSdk.create(appContext, accessSdkOptions)
                 .initialize()
+                .map(AccessSdk::identityManager)
                 .blockingFirst();
 
-        assertThat(accessSdk, is(notNullValue()));
+        Identity identity = identityManager.findIdentity().blockingFirst();
+
+        assertThat(identity, is(notNullValue()));
+        assertThat(identity.getDeviceSerial(), is(notNullValue()));
+        assertThat(identity.getKeys(), is(notNullValue()));
+
+        String serialNumberHex = identity.getDeviceSerial().getSerialNumberHex();
+        String publicKeyHex = identity.getKeys().getPublicKeyHex();
+        String privateKeyHex = identity.getKeys().getPrivateKeyHex();
+
+        assertThat(HEX_MATCHER.matchesAllOf(serialNumberHex), is(true));
+        assertThat(HEX_MATCHER.matchesAllOf(publicKeyHex), is(true));
+        assertThat(HEX_MATCHER.matchesAllOf(privateKeyHex), is(true));
     }
 
     @Test
-    public void initAmvAccessSdkWithExistingKeys() throws Exception {
+    public void a3_initAmvAccessSdkWithExistingKeys() throws Exception {
         // init without keys before initializing with given ones
         Identity sampleIdentity = getOrCreateUserIdentity();
 
