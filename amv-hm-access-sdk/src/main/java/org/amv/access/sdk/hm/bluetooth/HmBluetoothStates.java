@@ -27,4 +27,8 @@ final class HmBluetoothStates {
                 .authenticated(authenticated)
                 .build();
     }
+
+    private HmBluetoothStates() {
+        throw new UnsupportedOperationException();
+    }
 }

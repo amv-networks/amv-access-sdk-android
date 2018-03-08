@@ -16,4 +16,8 @@ final class MoreHmCommands {
             return Optional.absent();
         }
     }
+
+    private MoreHmCommands() {
+        throw new UnsupportedOperationException();
+    }
 }
