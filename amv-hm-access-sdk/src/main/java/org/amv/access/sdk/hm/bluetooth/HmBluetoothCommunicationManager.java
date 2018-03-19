@@ -1,5 +1,7 @@
 package org.amv.access.sdk.hm.bluetooth;
 
+import android.util.Log;
+
 import com.google.common.base.Optional;
 import com.highmobility.autoapi.Command.FailureMessage;
 import com.highmobility.autoapi.Command.VehicleStatus;
@@ -19,7 +21,6 @@ import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.error.AccessSdkException;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.Observable;
@@ -29,7 +30,7 @@ import io.reactivex.subjects.PublishSubject;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HmBluetoothCommunicationManager implements BluetoothCommunicationManager {
-    private static final String TAG = "HmBluetoothCommunicationManager";
+    private static final String TAG = "HmBtleCommunicationMan";
 
     private final BluetoothBroadcaster broadcaster;
     private final CommandFactory commandFactory;
@@ -56,6 +57,7 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
 
     @Override
     public Observable<Boolean> startConnecting(AccessCertificatePair accessCertificatePair) {
+        Log.d(TAG, "startConnecting with cert " + accessCertificatePair.getId());
         disposeSubscriptionsIfNecessary();
 
         this.broadcastConnectionSubscription = this.broadcaster.observeConnections()
@@ -67,12 +69,12 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
                     }
                 });
 
-        return this.broadcaster.startBroadcasting(accessCertificatePair);
+        return broadcaster.startBroadcasting(accessCertificatePair);
     }
 
     @Override
     public Observable<BroadcastStateChangeEvent> observeBroadcastState() {
-        return this.broadcaster.observeBroadcastStateChanges();
+        return broadcaster.observeBroadcastStateChanges();
     }
 
     @Override
@@ -107,11 +109,11 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     @Override
     public Observable<Boolean> terminate() {
         Observable<Boolean> sendDisconnectCommandAndContinueOnError = this
-                .sendCommand(this.commandFactory.disconnect())
+                .sendCommand(commandFactory.disconnect())
                 .onErrorReturnItem(true);
 
         return sendDisconnectCommandAndContinueOnError
-                .flatMap(foo -> this.broadcaster.terminate())
+                .flatMap(foo -> broadcaster.terminate())
                 .doOnError(e -> terminateInternal())
                 .doOnNext(next -> terminateInternal());
     }
@@ -125,18 +127,22 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     }
 
     private void disposeSubscriptionsIfNecessary() {
+        Log.d(TAG, "disposeSubscriptionsIfNecessary");
+
         if (incomingCommandsSubscription != null && !incomingCommandsSubscription.isDisposed()) {
             incomingCommandsSubscription.dispose();
         }
         if (connectionStateSubscription != null && !connectionStateSubscription.isDisposed()) {
-            connectionStateSubscription.isDisposed();
+            connectionStateSubscription.dispose();
         }
         if (broadcastConnectionSubscription != null && !broadcastConnectionSubscription.isDisposed()) {
-            broadcastConnectionSubscription.isDisposed();
+            broadcastConnectionSubscription.dispose();
         }
     }
 
     private void closeStreamsIfNecessary() {
+        Log.d(TAG, "closeStreamsIfNecessary");
+
         if (!vehicleStatusSubject.hasComplete()) {
             vehicleStatusSubject.onComplete();
         }
@@ -152,19 +158,26 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     }
 
     private void onConnect(BluetoothConnection connection) {
+        Log.d(TAG, "onConnect");
+
         disposeSubscriptionsIfNecessary();
 
         connectionRef.set(connection);
         vehicleState.set(HmVehicleState.unknown());
 
-        connectionStateSubject.onNext(SimpleConnectionStateChangeEvent.builder()
+        SimpleConnectionStateChangeEvent newConnectionStateEvent = SimpleConnectionStateChangeEvent.builder()
                 .currentState(HmBluetoothStates.from(Link.State.CONNECTED))
                 .previousState(HmBluetoothStates.from(Link.State.DISCONNECTED))
-                .build());
+                .build();
 
+        Log.d(TAG, "emit new connection state");
+        connectionStateSubject.onNext(newConnectionStateEvent);
+
+        Log.d(TAG, "start observing connecting state");
         connectionStateSubscription = connection.observeConnectionState()
                 .subscribe(connectionStateSubject::onNext);
 
+        Log.d(TAG, "start observing incoming commands");
         incomingCommandsSubscription = connection.observeIncomingCommands()
                 .doOnNext(incomingCommandsSubject::onNext)
                 .doOnNext(this::transformAndPublish)
@@ -172,6 +185,7 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     }
 
     private void onDisconnect() {
+        Log.d(TAG, "onDisconnect");
         disposeSubscriptionsIfNecessary();
 
         connectionRef.set(null);
@@ -187,6 +201,7 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
         Optional<IncomingCommand> incomingCommandOptional = MoreHmCommands
                 .parseIncomingCommand(commandEvent.getCommand());
         if (!incomingCommandOptional.isPresent()) {
+            Log.w(TAG, "Could not parse incoming command");
             return;
         }
 
