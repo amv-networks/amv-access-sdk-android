@@ -1,6 +1,7 @@
 package org.amv.access.sdk.hm.certificate;
 
 
+import com.google.common.base.Optional;
 import com.highmobility.utils.Base64;
 
 import junit.framework.Assert;
@@ -20,11 +21,11 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class HmLocalStorageTest {
@@ -152,6 +153,40 @@ public class HmLocalStorageTest {
         assertThat(removeSuccess, is(Boolean.TRUE));
     }
 
+
+    @Test
+    public void itShouldReturnEmptyOptionalOnNonExistingAccessCertById() throws Exception {
+        Optional<AccessCertificatePair> accessCertificateById = sut.findAccessCertificateById(UUID.randomUUID().toString())
+                .firstOrError()
+                .blockingGet();
+
+        assertThat(accessCertificateById, is(Optional.absent()));
+    }
+
+    @Test
+    public void itShouldSuccessfullyFindExistingAccessCertById() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        byte[] randomAccessCertBytes = Base64.decode(RANDOM_ACCESS_CERT_BASE64);
+        HmAccessCertificate hmAccessCertificate = new HmAccessCertificate(new com.highmobility.crypto.AccessCertificate(randomAccessCertBytes));
+        AccessCertificatePair accessCertificatePair = SimpleAccessCertificatePair.builder()
+                .id(uuid.toString())
+                .deviceAccessCertificate(hmAccessCertificate)
+                .vehicleAccessCertificate(hmAccessCertificate)
+                .build();
+
+        Boolean storeSuccess = sut.storeAccessCertificates(Collections.singletonList(accessCertificatePair))
+                .blockingFirst();
+        assertThat(storeSuccess, is(Boolean.TRUE));
+
+        AccessCertificatePair accessCertificateByIdOrNull = sut.findAccessCertificateById(uuid.toString())
+                .firstOrError()
+                .blockingGet()
+                .orNull();
+
+        assertThat(accessCertificateByIdOrNull, is(notNullValue()));
+        assertThat(accessCertificateByIdOrNull.getId(), is(uuid.toString()));
+    }
+
     @Test
     public void itShouldSuccessfullyRemoveExistingAccessCertById() throws Exception {
         UUID uuid = UUID.randomUUID();
@@ -213,18 +248,21 @@ public class HmLocalStorageTest {
         assertThat(resetSuccess, is(Boolean.TRUE));
 
         assertThat(sut.findKeys()
-                .map(Optional::ofNullable)
-                .onErrorReturnItem(Optional.empty())
-                .blockingFirst(), is(Optional.empty()));
+                .map(Optional::fromNullable)
+                .onErrorReturnItem(Optional.absent())
+                .blockingFirst(), is(Optional.absent()));
         assertThat(sut.findIssuerPublicKey()
-                .map(Optional::ofNullable)
-                .onErrorReturnItem(Optional.empty())
-                .blockingFirst(), is(Optional.empty()));
+                .map(Optional::fromNullable)
+                .onErrorReturnItem(Optional.absent())
+                .blockingFirst(), is(Optional.absent()));
         assertThat(sut.findDeviceCertificate()
-                .map(Optional::ofNullable)
-                .onErrorReturnItem(Optional.empty())
-                .blockingFirst(), is(Optional.empty()));
-        assertThat(sut.findAccessCertificates().toList().blockingGet().isEmpty(), is(true));
+                .map(Optional::fromNullable)
+                .onErrorReturnItem(Optional.absent())
+                .blockingFirst(), is(Optional.absent()));
+        assertThat(sut.findAccessCertificates()
+                .toList()
+                .blockingGet()
+                .isEmpty(), is(true));
     }
 
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import android.util.Pair;
 
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.highmobility.crypto.Crypto;
 
@@ -78,6 +79,17 @@ public class HmCertificateManager implements CertificateManager {
                 .toList()
                 .doOnSuccess(foo -> Log.d(TAG, "getAccessCertificates finished"))
                 .flatMapObservable(Observable::fromIterable);
+    }
+
+    @Override
+    public Observable<Optional<AccessCertificatePair>> getAccessCertificateById(String id) {
+        checkNotNull(id);
+
+        return Observable.just(1)
+                .subscribeOn(SCHEDULER)
+                .doOnNext(foo -> Log.d(TAG, "getAccessCertificateById"))
+                .flatMap(foo -> localStorage.findAccessCertificateById(id))
+                .doOnNext(foo -> Log.d(TAG, "getAccessCertificateById finished"));
     }
 
     @Override

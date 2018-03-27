@@ -24,6 +24,7 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -162,20 +163,23 @@ public class HmLocalStorage implements LocalStorage {
         return Observable.just(1)
                 .subscribeOn(SCHEDULER)
                 .doOnNext(foo -> Log.d(TAG, "findAccessCertificates"))
-                .flatMap(foo -> storage.findString(KEY_ACCESS_CERTIFICATES))
-                .map(valueOptional -> valueOptional.or("[]"))
-                .map(accessCertificatesJson -> {
-                    Type type = new TypeToken<List<SerializableAccessCertificatePair>>() {
-                    }.getType();
+                .flatMap(foo -> findAccessCertificatesWithFilter(cert -> true))
+                .toList()
+                .doOnSuccess(foo -> Log.d(TAG, "findAccessCertificates finished"))
+                .flatMapObservable(Observable::fromIterable);
+    }
 
-                    List<SerializableAccessCertificatePair> serializableAccessCerts = Json
-                            .fromJson(accessCertificatesJson, type);
+    @Override
+    public Observable<Optional<AccessCertificatePair>> findAccessCertificateById(String accessCertificateId) {
+        checkNotNull(accessCertificateId);
 
-                    return serializableAccessCerts;
-                })
-                .doOnNext(foo -> Log.d(TAG, "findAccessCertificates finished"))
-                .flatMapIterable(i -> i)
-                .map(HmAccessCertificatePairs::create);
+        return Observable.just(1)
+                .subscribeOn(SCHEDULER)
+                .doOnNext(foo -> Log.d(TAG, "findAccessCertificateById"))
+                .flatMap(foo -> findAccessCertificatesWithFilter(cert -> accessCertificateId.equals(cert.getId())))
+                .map(Optional::fromNullable)
+                .defaultIfEmpty(Optional.absent())
+                .doOnNext(foo -> Log.d(TAG, "findAccessCertificateById finished"));
     }
 
     @Override
@@ -210,6 +214,26 @@ public class HmLocalStorage implements LocalStorage {
         return Observable.just(true)
                 .doOnNext(foo -> reset(storage))
                 .doOnNext(foo -> reset(secureStorage));
+    }
+
+    private Observable<AccessCertificatePair> findAccessCertificatesWithFilter(Predicate<SerializableAccessCertificatePair> filter) {
+        checkNotNull(filter);
+
+        return Observable.just(1)
+                .flatMap(foo -> storage.findString(KEY_ACCESS_CERTIFICATES))
+                .map(valueOptional -> valueOptional.or("[]"))
+                .map(accessCertificatesJson -> {
+                    Type type = new TypeToken<List<SerializableAccessCertificatePair>>() {
+                    }.getType();
+
+                    List<SerializableAccessCertificatePair> serializableAccessCerts = Json
+                            .fromJson(accessCertificatesJson, type);
+
+                    return serializableAccessCerts;
+                })
+                .flatMapIterable(i -> i)
+                .filter(filter)
+                .map(HmAccessCertificatePairs::create);
     }
 
     private void reset(Storage storage) {

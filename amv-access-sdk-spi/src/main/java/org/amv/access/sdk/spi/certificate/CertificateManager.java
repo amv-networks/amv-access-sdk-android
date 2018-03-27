@@ -1,6 +1,8 @@
 package org.amv.access.sdk.spi.certificate;
 
 
+import com.google.common.base.Optional;
+
 import io.reactivex.Observable;
 
 public interface CertificateManager {
@@ -17,6 +19,13 @@ public interface CertificateManager {
      * @return an observable emitting all locally present access certificates
      */
     Observable<AccessCertificatePair> getAccessCertificates();
+
+    /**
+     * Retrieve a single access certificate by id.
+     *
+     * @return an observable emitting an access certificate or empty
+     */
+    Observable<Optional<AccessCertificatePair>> getAccessCertificateById(String id);
 
     /**
      * Download access certificates from remote and store them locally on the device.

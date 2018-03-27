@@ -1,8 +1,10 @@
 package org.amv.access.sdk.hm.certificate;
 
-import org.amv.access.sdk.spi.crypto.Keys;
+import com.google.common.base.Optional;
+
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
+import org.amv.access.sdk.spi.crypto.Keys;
 
 import java.util.List;
 
@@ -25,6 +27,8 @@ public interface LocalStorage {
     Observable<Boolean> storeAccessCertificates(List<AccessCertificatePair> certificates);
 
     Observable<AccessCertificatePair> findAccessCertificates();
+
+    Observable<Optional<AccessCertificatePair>> findAccessCertificateById(String id);
 
     Observable<Boolean> removeAccessCertificateById(String accessCertificateId);
 
