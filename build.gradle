@@ -44,9 +44,9 @@ allprojects {
         amvAccessClientVersion = '0.9.2'
         hmkitVersion = '1.0.12'
         guavaVersion = '24.0-android'
-        rxAndroidVersion = '2.0.1'
-        rxJavaVersion = '2.1.9'
-        concealVersion = '2.0.1@aar'
+        rxAndroidVersion = '2.0.2'
+        rxJavaVersion = '2.1.12'
+        concealVersion = '2.0.2@aar'
         lombokVersion = '1.16.16'
 
         leakcanaryVersion = '1.5.4'

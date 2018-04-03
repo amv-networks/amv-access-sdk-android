@@ -2,7 +2,6 @@ package org.amv.access.sdk.hm.certificate;
 
 import android.util.Log;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.highmobility.crypto.Crypto;
 import com.highmobility.utils.Base64;
 
@@ -14,6 +13,7 @@ import org.amv.access.client.android.model.CreateDeviceCertificateRequestDto;
 import org.amv.access.client.android.model.DeviceCertificateDto;
 import org.amv.access.client.android.model.ErrorResponseDto;
 import org.amv.access.sdk.hm.AccessApiContext;
+import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.hm.error.CertificateRevokeException;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.certificate.DeviceCertificate;
@@ -22,21 +22,14 @@ import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class AmvHmRemote implements Remote {
     private static final String TAG = "AmvHmRemote";
-    private static final Scheduler SCHEDULER = Schedulers.from(Executors
-            .newFixedThreadPool(1, new ThreadFactoryBuilder()
-                    .setNameFormat("amv-access-sdk-remote-%d")
-                    .build()));
 
     private final AccessApiContext accessApiContext;
 
@@ -49,7 +42,7 @@ public class AmvHmRemote implements Remote {
         checkNotNull(keys);
 
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.remoteScheduler())
                 .doOnNext(foo -> Log.d(TAG, "createDeviceCertificate"))
                 .flatMap(foo -> {
                     DeviceCertClient deviceCertClient = Clients.simpleDeviceCertClient(accessApiContext.getBaseUrl());
@@ -77,7 +70,7 @@ public class AmvHmRemote implements Remote {
         checkNotNull(keys);
 
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.remoteScheduler())
                 .doOnNext(foo -> Log.d(TAG, "downloadDeviceCertificate"))
                 .flatMap(foo -> {
                     DeviceCertClient deviceCertClient = Clients.simpleDeviceCertClient(accessApiContext.getBaseUrl());
@@ -103,7 +96,7 @@ public class AmvHmRemote implements Remote {
         checkNotNull(deviceCertificate);
 
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.remoteScheduler())
                 .doOnNext(foo -> Log.d(TAG, "downloadAccessCertificates"))
                 .flatMap(foo -> {
                     AccessCertClient client = Clients.simpleAccessCertClient(accessApiContext.getBaseUrl());

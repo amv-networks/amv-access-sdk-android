@@ -9,6 +9,7 @@ import com.highmobility.autoapi.incoming.Failure;
 import com.highmobility.autoapi.incoming.IncomingCommand;
 import com.highmobility.hmkit.Link;
 
+import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.hm.vehicle.HmVehicleState;
 import org.amv.access.sdk.spi.bluetooth.BluetoothCommunicationManager;
 import org.amv.access.sdk.spi.bluetooth.BroadcastStateChangeEvent;
@@ -17,7 +18,6 @@ import org.amv.access.sdk.spi.bluetooth.IncomingCommandEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.communication.Command;
-import org.amv.access.sdk.spi.communication.CommandFactory;
 import org.amv.access.sdk.spi.error.AccessSdkException;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 
@@ -33,7 +33,6 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     private static final String TAG = "HmBtleCommunicationMan";
 
     private final BluetoothBroadcaster broadcaster;
-    private final CommandFactory commandFactory;
     private final PublishSubject<ConnectionStateChangeEvent> connectionStateSubject;
     private final PublishSubject<IncomingCommandEvent> incomingCommandsSubject;
     private final PublishSubject<VehicleState> vehicleStatusSubject;
@@ -45,22 +44,16 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     private volatile Disposable connectionStateSubscription;
     private volatile Disposable broadcastConnectionSubscription;
 
-    public HmBluetoothCommunicationManager(BluetoothBroadcaster broadcaster, CommandFactory commandFactory) {
+    public HmBluetoothCommunicationManager(BluetoothBroadcaster broadcaster) {
         this.broadcaster = checkNotNull(broadcaster);
-        this.commandFactory = checkNotNull(commandFactory);
 
         this.connectionStateSubject = PublishSubject.create();
         this.incomingCommandsSubject = PublishSubject.create();
         this.vehicleStatusSubject = PublishSubject.create();
         this.incomingFailureSubject = PublishSubject.create();
-    }
-
-    @Override
-    public Observable<Boolean> startConnecting(AccessCertificatePair accessCertificatePair) {
-        Log.d(TAG, "startConnecting with cert " + accessCertificatePair.getId());
-        disposeSubscriptionsIfNecessary();
 
         this.broadcastConnectionSubscription = this.broadcaster.observeConnections()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .subscribe(next -> {
                     if (next.isDisconnected()) {
                         onDisconnect();
@@ -68,6 +61,12 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
                         onConnect(next.getConnection());
                     }
                 });
+    }
+
+    @Override
+    public Observable<Boolean> startConnecting(AccessCertificatePair accessCertificatePair) {
+        Log.d(TAG, "startConnecting with cert " + accessCertificatePair.getId());
+        disposeSubscriptionsIfNecessary();
 
         return broadcaster.startBroadcasting(accessCertificatePair);
     }
@@ -79,28 +78,35 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
 
     @Override
     public Observable<ConnectionStateChangeEvent> observeConnectionState() {
-        return connectionStateSubject.share();
+        return connectionStateSubject.share()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<IncomingCommandEvent> observeIncomingCommands() {
-        return incomingCommandsSubject.share();
+        return incomingCommandsSubject.share()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<AccessSdkException> observeIncomingFailureMessages() {
-        return incomingFailureSubject.share();
+        return incomingFailureSubject.share()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<VehicleState> observeVehicleState() {
-        return vehicleStatusSubject.share();
+        return vehicleStatusSubject.share()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<Boolean> sendCommand(Command command) {
+        checkNotNull(command);
+
         return activeConnectionOrErr()
-                .flatMap(connection -> connection.sendCommand(command.getBytes()));
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
+                .flatMap(connection -> connection.sendCommand(command));
     }
 
     /**
@@ -108,17 +114,23 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
      */
     @Override
     public Observable<Boolean> terminate() {
-        Observable<Boolean> sendDisconnectCommandAndContinueOnError = this
-                .sendCommand(commandFactory.disconnect())
-                .onErrorReturnItem(true);
+        Observable<Boolean> terminateConnectionAndContinueOnError = Optional
+                .fromNullable(connectionRef.get())
+                .transform(connection -> connection.terminate())
+                .or(Observable.just(true));
 
-        return sendDisconnectCommandAndContinueOnError
-                .flatMap(foo -> broadcaster.terminate())
+        return broadcaster.terminate()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
+                .flatMap(foo -> terminateConnectionAndContinueOnError)
                 .doOnError(e -> terminateInternal())
                 .doOnNext(next -> terminateInternal());
     }
 
     private void terminateInternal() {
+        if (broadcastConnectionSubscription != null && !broadcastConnectionSubscription.isDisposed()) {
+            broadcastConnectionSubscription.dispose();
+        }
+
         disposeSubscriptionsIfNecessary();
         closeStreamsIfNecessary();
 
@@ -134,9 +146,6 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
         }
         if (connectionStateSubscription != null && !connectionStateSubscription.isDisposed()) {
             connectionStateSubscription.dispose();
-        }
-        if (broadcastConnectionSubscription != null && !broadcastConnectionSubscription.isDisposed()) {
-            broadcastConnectionSubscription.dispose();
         }
     }
 
@@ -175,10 +184,12 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
 
         Log.d(TAG, "start observing connecting state");
         connectionStateSubscription = connection.observeConnectionState()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .subscribe(connectionStateSubject::onNext);
 
         Log.d(TAG, "start observing incoming commands");
         incomingCommandsSubscription = connection.observeIncomingCommands()
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(incomingCommandsSubject::onNext)
                 .doOnNext(this::transformAndPublish)
                 .subscribe();
@@ -190,11 +201,6 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
 
         connectionRef.set(null);
         vehicleState.set(HmVehicleState.unknown());
-
-        connectionStateSubject.onNext(SimpleConnectionStateChangeEvent.builder()
-                .currentState(HmBluetoothStates.from(Link.State.DISCONNECTED))
-                .previousState(HmBluetoothStates.from(Link.State.CONNECTED))
-                .build());
     }
 
     private void transformAndPublish(IncomingCommandEvent commandEvent) {
@@ -248,6 +254,6 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
                     }
 
                     return Observable.just(bluetoothConnection);
-                });
+                }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 }

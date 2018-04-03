@@ -93,7 +93,7 @@ public class AmvAccessSdk implements AccessSdk {
 
     @Override
     public CommunicationManagerFactory<BluetoothCommunicationManager> bluetoothCommunicationManagerFactory() {
-        return () -> new HmBluetoothCommunicationManager(createBluetoothBroadcaster(), commandFactory());
+        return () -> new HmBluetoothCommunicationManager(createBluetoothBroadcaster());
     }
 
     @Override

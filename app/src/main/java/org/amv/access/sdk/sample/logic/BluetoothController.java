@@ -30,11 +30,12 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.amv.access.sdk.sample.CertificatesActivity.TAG;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_READY;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_UPDATING;
 
 public class BluetoothController implements IBluetoothController {
+    public static final String TAG = "BluetoothController";
+
     private BluetoothCommunicationManager communicationManager;
     private IBluetoothView view;
     private Context context;
@@ -90,18 +91,26 @@ public class BluetoothController implements IBluetoothController {
 
         this.broadcastStateChangesSubscription = this.communicationManager
                 .observeBroadcastState()
+                .doOnNext(next -> Log.d(TAG, "observeBroadcastState: " + next))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onBroadcastStateChanged);
 
         this.incomingFailureSubscription = this.communicationManager
                 .observeIncomingFailureMessages()
+                .doOnNext(next -> Log.d(TAG, "observeIncomingFailureMessages: " + next))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onFailureReceived);
 
         this.vehicleStateSubscription = this.communicationManager
                 .observeVehicleState()
+                .doOnNext(next -> Log.d(TAG, "observeVehicleState: " + next))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onVehicleState);
 
         this.connectionStateChangesSubscription = this.communicationManager
                 .observeConnectionState()
+                .doOnNext(next -> Log.d(TAG, "observeConnectionState: " + next))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onConnectionStateChanged);
 
         connect();
@@ -135,6 +144,7 @@ public class BluetoothController implements IBluetoothController {
         updateState(VEHICLE_UPDATING);
 
         this.communicationManager.sendCommand(lockDoorsCommand)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(next -> {
                     Log.d(TAG, "Command successfully sent.");
                 }, error -> {
@@ -147,11 +157,12 @@ public class BluetoothController implements IBluetoothController {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: ");
 
-        terminateConnectionManager().subscribe(next -> {
-            Log.d(TAG, "ConnectionManager terminated.");
-        }, error -> {
-            Log.e(TAG, "An error occurred", error);
-        });
+        try {
+            Boolean success = terminateConnectionManager().blockingFirst();
+            Log.d(TAG, "ConnectionManager terminated: " + success);
+        } catch (Exception e) {
+            Log.e(TAG, "An error occurred", e);
+        }
 
         RefWatcher refWatcher = AccessDemoApplication.getRefWatcher(context);
         refWatcher.watch(this);
@@ -209,6 +220,7 @@ public class BluetoothController implements IBluetoothController {
         }
 
         communicationManager.startConnecting(accessCertificatePair)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(next -> {
                     Log.d(TAG, "Successfully started broadcasting.");
                 }, error -> {
@@ -237,6 +249,8 @@ public class BluetoothController implements IBluetoothController {
             requestVehicleStateUpdate();
         } else if (newState.isConnected()) {
             updateState(State.VEHICLE_CONNECTED);
+        } else if (newState.isDisconnected()) {
+            updateState(State.LOOKING);
         }
     }
 
@@ -255,6 +269,7 @@ public class BluetoothController implements IBluetoothController {
         this.sentCommand = command1.getType();
 
         this.communicationManager.sendCommand(command1)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(next -> {
                     Log.d(TAG, "Command successfully sent.");
                 }, error -> {

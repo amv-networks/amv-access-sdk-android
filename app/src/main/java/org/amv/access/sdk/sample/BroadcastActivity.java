@@ -79,8 +79,8 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
 
     @Override
     protected void onDestroy() {
-        controller.onDestroy();
         super.onDestroy();
+        controller.onDestroy();
 
         RefWatcher refWatcher = AccessDemoApplication.getRefWatcher(this);
         refWatcher.watch(this);

@@ -3,38 +3,31 @@ package org.amv.access.sdk.hm.certificate;
 import android.util.Log;
 
 import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.reflect.TypeToken;
-import com.highmobility.crypto.DeviceCertificate;
 import com.highmobility.utils.Base64;
 
+import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.hm.error.SdkNotInitializedException;
 import org.amv.access.sdk.hm.secure.SecureStorage;
 import org.amv.access.sdk.hm.secure.Storage;
 import org.amv.access.sdk.hm.util.Json;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
+import org.amv.access.sdk.spi.certificate.DeviceCertificate;
 import org.amv.access.sdk.spi.crypto.Keys;
 import org.amv.access.sdk.spi.crypto.impl.KeysImpl;
 
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Predicate;
-import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HmLocalStorage implements LocalStorage {
     private static final String TAG = "HmLocalStorage";
-    private static final Scheduler SCHEDULER = Schedulers.from(Executors
-            .newFixedThreadPool(1, new ThreadFactoryBuilder()
-                    .setNameFormat("amv-access-sdk-storage-%d")
-                    .build()));
 
     private static final String KEY_DEVICE_CERTIFICATE = "KEY_DEVICE_CERTIFICATE";
     private static final String KEY_ACCESS_CERTIFICATES = "KEY_ACCESS_CERTIFICATES";
@@ -51,17 +44,17 @@ public class HmLocalStorage implements LocalStorage {
     }
 
     @Override
-    public Observable<org.amv.access.sdk.spi.certificate.DeviceCertificate> findDeviceCertificate() {
+    public Observable<DeviceCertificate> findDeviceCertificate() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "findDeviceCertificate"))
                 .flatMap(foo -> storage.findString(KEY_DEVICE_CERTIFICATE))
                 .flatMap(deviceCertOptional -> deviceCertOptional
-                        .transform(DeviceCertificate::new)
+                        .transform(com.highmobility.crypto.DeviceCertificate::new)
                         .transform(HmDeviceCertificate::new)
                         .transform(Observable::just)
                         .or(() -> Observable.error(new SdkNotInitializedException("No device certificate found in local storage"))))
-                .cast(org.amv.access.sdk.spi.certificate.DeviceCertificate.class)
+                .cast(DeviceCertificate.class)
                 .doOnNext(deviceCertificate -> Log.d(TAG, "findDeviceCertificate finished: " + deviceCertificate.getDeviceSerial()));
     }
 
@@ -70,7 +63,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(deviceCertificate);
 
         return Observable.just(deviceCertificate)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "storeDeviceCertificate"))
                 .map(val -> Base64.encode(val.toByteArray()))
                 .flatMap(deviceCertificateBase64 -> storage
@@ -81,7 +74,7 @@ public class HmLocalStorage implements LocalStorage {
     @Override
     public Observable<byte[]> findIssuerPublicKey() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "findIssuerPublicKey"))
                 .flatMap(foo -> storage.findString(KEY_ISSUER_PUBLIC_KEY))
                 .flatMap(issuerKeyOptional -> issuerKeyOptional
@@ -96,7 +89,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(issuerPublicKey);
 
         return Observable.just(issuerPublicKey)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "storeIssuerPublicKey"))
                 .map(Base64::encode)
                 .flatMap(issuerKeyBase64 -> storage
@@ -107,7 +100,7 @@ public class HmLocalStorage implements LocalStorage {
     @Override
     public Observable<Keys> findKeys() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "findKeys"))
                 .flatMap(foo -> {
                     Single<byte[]> getPrivateKeyOrThrow = secureStorage.findString(KEY_PRIVATE_KEY)
@@ -142,7 +135,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(keys);
 
         return Observable.just(keys)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "storeKeys"))
                 .flatMap(k -> {
                     Observable<Boolean> storePrivateKey = Observable.just(k.getPrivateKey())
@@ -161,7 +154,7 @@ public class HmLocalStorage implements LocalStorage {
     @Override
     public Observable<AccessCertificatePair> findAccessCertificates() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "findAccessCertificates"))
                 .flatMap(foo -> findAccessCertificatesWithFilter(cert -> true))
                 .toList()
@@ -174,7 +167,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(accessCertificateId);
 
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "findAccessCertificateById"))
                 .flatMap(foo -> findAccessCertificatesWithFilter(cert -> accessCertificateId.equals(cert.getId())))
                 .map(Optional::fromNullable)
@@ -187,7 +180,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(certificates);
 
         return Observable.fromIterable(certificates)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .map(SerializableAccessCertificatePair::from)
                 .toList()
                 .doOnSuccess(foo -> Log.d(TAG, "storeAccessCertificates"))
@@ -201,7 +194,7 @@ public class HmLocalStorage implements LocalStorage {
         checkNotNull(accessCertificateId);
 
         return findAccessCertificates()
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.storageScheduler())
                 .doOnNext(foo -> Log.d(TAG, "removeAccessCertificateById"))
                 .filter(t -> !accessCertificateId.equals(t.getId()))
                 .toList()

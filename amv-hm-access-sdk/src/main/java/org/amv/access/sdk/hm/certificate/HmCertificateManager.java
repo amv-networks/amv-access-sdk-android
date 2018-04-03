@@ -5,9 +5,9 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.highmobility.crypto.Crypto;
 
+import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.hm.config.AccessSdkOptions;
 import org.amv.access.sdk.hm.error.CertificateDownloadException;
 import org.amv.access.sdk.hm.error.CertificateRevokeException;
@@ -23,20 +23,13 @@ import org.amv.access.sdk.spi.identity.Identity;
 import org.amv.access.sdk.spi.identity.SerialNumber;
 
 import java.util.Objects;
-import java.util.concurrent.Executors;
 
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
-import io.reactivex.schedulers.Schedulers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HmCertificateManager implements CertificateManager {
     private static final String TAG = "HmCertificateManager";
-    private static final Scheduler SCHEDULER = Schedulers.from(Executors
-            .newFixedThreadPool(1, new ThreadFactoryBuilder()
-                    .setNameFormat("amv-access-sdk-certificate-%d")
-                    .build()));
 
     private final LocalStorage localStorage;
     private final Remote remote;
@@ -48,7 +41,7 @@ public class HmCertificateManager implements CertificateManager {
 
     public Observable<CertificateManager> initialize(Context context, AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "initialize"))
                 .flatMap(foo -> findOrCreateKeys(accessSdkOptions))
                 .flatMap(keys -> findLocallyOrDownloadDeviceCertificateWithIssuerKey(accessSdkOptions, keys))
@@ -64,7 +57,7 @@ public class HmCertificateManager implements CertificateManager {
     @Override
     public Observable<DeviceCertificate> getDeviceCertificate() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "getDeviceCertificate"))
                 .flatMap(foo -> localStorage.findDeviceCertificate())
                 .doOnNext(foo -> Log.d(TAG, "getDeviceCertificate finished"));
@@ -73,7 +66,7 @@ public class HmCertificateManager implements CertificateManager {
     @Override
     public Observable<AccessCertificatePair> getAccessCertificates() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "getAccessCertificates"))
                 .flatMap(foo -> localStorage.findAccessCertificates())
                 .toList()
@@ -86,7 +79,7 @@ public class HmCertificateManager implements CertificateManager {
         checkNotNull(id);
 
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "getAccessCertificateById"))
                 .flatMap(foo -> localStorage.findAccessCertificateById(id))
                 .doOnNext(foo -> Log.d(TAG, "getAccessCertificateById finished"));
@@ -97,8 +90,8 @@ public class HmCertificateManager implements CertificateManager {
         checkNotNull(accessCertificatePair);
 
         return Observable.just(1)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "revokeAccessCertificate"))
-                .subscribeOn(SCHEDULER)
                 .flatMap(foo -> localStorage.findDeviceCertificate())
                 .zipWith(localStorage.findKeys(), Pair::create)
                 .flatMap(pair -> {
@@ -124,7 +117,7 @@ public class HmCertificateManager implements CertificateManager {
     @Override
     public Observable<AccessCertificatePair> refreshAccessCertificates() {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
+                .subscribeOn(AmvSdkSchedulers.defaultScheduler())
                 .doOnNext(foo -> Log.d(TAG, "refreshAccessCertificates"))
                 .flatMap(foo -> localStorage.findDeviceCertificate())
                 .zipWith(localStorage.findKeys(), Pair::create)
@@ -200,7 +193,6 @@ public class HmCertificateManager implements CertificateManager {
 
     private Observable<Keys> findOrCreateKeys(AccessSdkOptions accessSdkOptions) {
         return Observable.just(1)
-                .subscribeOn(SCHEDULER)
                 .flatMap(foo -> isKeysPresent())
                 .flatMap(keysPresent -> !keysPresent ? createAndStoreKeys(accessSdkOptions) : localStorage.findKeys());
     }

@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ability to find an access certificate by id
 ### Changed
 - Upgrade amv-access-client-android library
+- Upgrade conceal library
+- Upgrade rxAndroid library
+- **BREAKING**: Always execute async methods on internal schedulers
 ### Fixed
 - Fix disposing all subscriptions after closing bluetooth connection
+- Fix terminating broadcaster and disconnect
 
 ## [0.1.1] - 2018-03-07
 ### Changed

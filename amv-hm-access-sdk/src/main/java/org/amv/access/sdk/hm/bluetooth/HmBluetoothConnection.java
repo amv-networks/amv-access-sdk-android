@@ -10,11 +10,14 @@ import com.highmobility.hmkit.ConnectedLinkListener;
 import com.highmobility.hmkit.Error.LinkError;
 import com.highmobility.hmkit.Link;
 
+import org.amv.access.sdk.hm.AmvSdkSchedulers;
+import org.amv.access.sdk.hm.communication.HmCommandFactory;
 import org.amv.access.sdk.spi.bluetooth.ConnectionState;
 import org.amv.access.sdk.spi.bluetooth.ConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.IncomingCommandEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleIncomingCommandEvent;
+import org.amv.access.sdk.spi.communication.Command;
 
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
@@ -30,39 +33,59 @@ public class HmBluetoothConnection implements BluetoothConnection {
 
     HmBluetoothConnection(ConnectedLink connectedLink) {
         this.connectedLink = checkNotNull(connectedLink);
-        this.linkStateSubject = PublishSubject.create();
 
+        this.linkStateSubject = PublishSubject.create();
         this.incomingCommandsSubject = PublishSubject.create();
 
         this.connectedLink.setListener(new HmBtleConnectedLinkListener());
     }
 
     @Override
-    public Observable<Boolean> sendCommand(byte[] command) {
-        return Observable.create(subscriber -> {
-            connectedLink.sendCommand(command, new Link.CommandCallback() {
+    public Observable<Boolean> sendCommand(Command command) {
+        checkNotNull(command);
+
+        return Observable.<Boolean>create(subscriber -> {
+            Log.d(TAG, "Sending command '" + command.getType().getId() + "'");
+
+            connectedLink.sendCommand(command.getBytes(), new Link.CommandCallback() {
                 @Override
                 public void onCommandSent() {
-                    subscriber.onNext(true);
-                    subscriber.onComplete();
+                    Log.d(TAG, "Command '" + command.getType().getId() + "' successfully sent");
+                    if (!subscriber.isDisposed()) {
+                        subscriber.onNext(true);
+                        subscriber.onComplete();
+                    }
                 }
 
                 @Override
                 public void onCommandFailed(LinkError linkError) {
-                    subscriber.onError(new RuntimeException(linkError.getType() + ": " + linkError.getMessage()));
+                    String errorMessage = linkError.getType() + ": " + linkError.getMessage();
+                    Log.d(TAG, "Command '" + command.getType().getId() + "' failed: " + errorMessage);
+
+                    if (!subscriber.isDisposed()) {
+                        subscriber.onError(new RuntimeException(errorMessage));
+                    }
                 }
             });
-        });
+        }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
+    }
+
+    @Override
+    public Observable<Boolean> terminate() {
+        return Observable.fromCallable(() -> {
+            connectedLink.sendCommand(new HmCommandFactory().disconnect().getBytes(), new NoopCommandCallback());
+            return true;
+        }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<ConnectionStateChangeEvent> observeConnectionState() {
-        return this.linkStateSubject.share();
+        return this.linkStateSubject.share().subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<IncomingCommandEvent> observeIncomingCommands() {
-        return incomingCommandsSubject.share();
+        return incomingCommandsSubject.share().subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     private void closeStreamsIfNecessary() {
@@ -137,6 +160,19 @@ public class HmBluetoothConnection implements BluetoothConnection {
                 Log.w(TAG, "Error while parsing command", e);
                 return Optional.absent();
             }
+        }
+    }
+
+    private static class NoopCommandCallback implements Link.CommandCallback {
+
+        @Override
+        public void onCommandSent() {
+            Log.d("NoopCommandCallback", "onCommandSent");
+        }
+
+        @Override
+        public void onCommandFailed(LinkError linkError) {
+            Log.d("NoopCommandCallback", "onCommandFailed: " + linkError.getMessage());
         }
     }
 }
