@@ -18,6 +18,7 @@ import org.amv.access.sdk.spi.bluetooth.IncomingCommandEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleIncomingCommandEvent;
 import org.amv.access.sdk.spi.communication.Command;
+import org.amv.access.sdk.spi.communication.CommandFactory;
 
 import io.reactivex.Observable;
 import io.reactivex.subjects.PublishSubject;
@@ -27,11 +28,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class HmBluetoothConnection implements BluetoothConnection {
     private static final String TAG = "HmBluetoothConnection";
 
+    private final CommandFactory commandFactory;
     private final ConnectedLink connectedLink;
     private final PublishSubject<ConnectionStateChangeEvent> linkStateSubject;
     private final PublishSubject<IncomingCommandEvent> incomingCommandsSubject;
 
-    HmBluetoothConnection(ConnectedLink connectedLink) {
+    HmBluetoothConnection(CommandFactory commandFactory, ConnectedLink connectedLink) {
+        this.commandFactory = checkNotNull(commandFactory);
         this.connectedLink = checkNotNull(connectedLink);
 
         this.linkStateSubject = PublishSubject.create();
@@ -73,7 +76,7 @@ public class HmBluetoothConnection implements BluetoothConnection {
     @Override
     public Observable<Boolean> terminate() {
         return Observable.fromCallable(() -> {
-            connectedLink.sendCommand(new HmCommandFactory().disconnect().getBytes(), new NoopCommandCallback());
+            connectedLink.sendCommand(commandFactory.disconnect().getBytes(), new NoopCommandCallback());
             return true;
         }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }

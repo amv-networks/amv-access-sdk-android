@@ -13,6 +13,7 @@ import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.spi.bluetooth.BroadcastStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.impl.SimpleBroadcastStateChangeEvent;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
+import org.amv.access.sdk.spi.communication.CommandFactory;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,6 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
     private static final String TAG = "HmBluetoothBroadcaster";
 
+    private final CommandFactory commandFactory;
     private final Broadcaster broadcaster;
     private final PublishSubject<BroadcastStateChangeEvent> broadcasterStateSubject;
     private final PublishSubject<BluetoothConnectionEvent> connectionSubject;
@@ -31,7 +33,8 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
     private final AtomicReference<ConnectedLink> connectedLinkRef = new AtomicReference<>();
     private final AtomicReference<BluetoothConnection> bluetoothConnectionRef = new AtomicReference<>();
 
-    public HmBluetoothBroadcaster(Broadcaster broadcaster) {
+    public HmBluetoothBroadcaster(CommandFactory commandFactory, Broadcaster broadcaster) {
+        this.commandFactory = checkNotNull(commandFactory);
         this.broadcaster = checkNotNull(broadcaster);
 
         this.broadcasterStateSubject = PublishSubject.create();
@@ -162,7 +165,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
                 return;
             }
 
-            BluetoothConnection currentConnection = new HmBluetoothConnection(connectedLink);
+            BluetoothConnection currentConnection = new HmBluetoothConnection(commandFactory, connectedLink);
             connectedLinkRef.set(connectedLink);
             bluetoothConnectionRef.set(currentConnection);
 

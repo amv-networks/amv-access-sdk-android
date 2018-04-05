@@ -102,7 +102,7 @@ public class AmvAccessSdk implements AccessSdk {
     }
 
     private BluetoothBroadcaster createBluetoothBroadcaster() {
-        return new HmBluetoothBroadcaster(manager.getBroadcaster());
+        return new HmBluetoothBroadcaster(commandFactory, manager.getBroadcaster());
     }
 
     private Observable<Boolean> initializeHmManager() {
