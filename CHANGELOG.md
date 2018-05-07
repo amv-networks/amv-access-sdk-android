@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Keep alive pinging to prevent going into power saving mode while broadcasting
+### Changed
+- Use hosted version of hmkit
+- Upgrade hmkit to version 1.0.13
+### Fixed
+- Connectivity issues with models from manufacturer Samsung
 
 ## [0.2.0] - 2018-04-03
 ### Added

@@ -25,6 +25,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
     private static final String TAG = "HmBluetoothBroadcaster";
 
+    /**
+     * Some devices enable an BLE chip power saving mode which causes a connection loss after
+     * ~1000ms. This has been observed with models from manufacturer Samsung.
+     * To avoid the connection being lost, a keep-alive ping needs to be enabled with an interval
+     * lower than 1000ms. 500ms has been verified to be a safe trade-off.
+     */
+    private static final int IS_ALIVE_PING_INTERVAL_IN_MS = 500;
+
     private final CommandFactory commandFactory;
     private final Broadcaster broadcaster;
     private final PublishSubject<BroadcastStateChangeEvent> broadcasterStateSubject;
@@ -81,6 +89,8 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
                 public void onBroadcastingStarted() {
                     Log.d(TAG, "broadcasting started");
 
+                    broadcaster.startAlivePinging(IS_ALIVE_PING_INTERVAL_IN_MS);
+
                     if (!subscriber.isDisposed()) {
                         subscriber.onNext(true);
                         subscriber.onComplete();
@@ -133,6 +143,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     private void stopBroadcasting() {
         Log.d(TAG, "stop broadcasting");
+        this.broadcaster.stopAlivePinging();
         this.broadcaster.stopBroadcasting();
     }
 
