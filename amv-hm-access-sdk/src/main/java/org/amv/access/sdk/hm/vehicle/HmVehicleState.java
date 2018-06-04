@@ -90,38 +90,39 @@ public class HmVehicleState implements VehicleState {
                     .plugged(!notPluggedIn)
                     .build());
         } else if (command.is(Command.Diagnostics.DIAGNOSTICS_STATE)) {
-            int mileage = ((DiagnosticsState) command).getMileage();
+            DiagnosticsState state = (DiagnosticsState) command;
+            int mileage = state.getMileage();
 
             builder.mileage(SimpleMileage.builder()
                     .value(mileage)
                     .build());
         } else if (command.is(Command.KeyfobPosition.KEYFOB_POSITION)) {
             KeyfobPosition state = (KeyfobPosition) command;
-
             boolean keyPresent = state.getPosition() == KeyfobPosition.Position.INSIDE_CAR;
+
             builder.keyPosition(SimpleKeyPosition.builder()
                     .known(keyPresent)
                     .build());
         } else if (command.is(Command.VehicleStatus.VEHICLE_STATUS)) {
             VehicleStatus vehicleStatus = (VehicleStatus) command;
-            FeatureState[] states = vehicleStatus.getFeatureStates();
-            return extend(states);
+            FeatureState[] statesOrNull = vehicleStatus.getFeatureStates();
+            FeatureState[] states = statesOrNull == null ? new FeatureState[0] : statesOrNull;
+
+            return extend(states).build();
         }
 
         return builder.build();
     }
 
-    private HmVehicleState extend(FeatureState[] featureStates) {
+    private HmVehicleStateBuilder extend(FeatureState[] featureStates) {
         HmVehicleStateBuilder builder = this.toBuilder();
         for (FeatureState featureState : featureStates) {
-            builder = builder.build().extend(featureState).toBuilder();
+            builder = extend(builder, featureState);
         }
-        return builder.build();
+        return builder;
     }
 
-    private HmVehicleState extend(FeatureState featureState) {
-        HmVehicleStateBuilder builder = this.toBuilder();
-
+    private HmVehicleStateBuilder extend(HmVehicleStateBuilder builder, FeatureState featureState) {
         if (featureState.getIdentifier() == Command.Identifier.DOOR_LOCKS) {
             DoorLocks lockState = (DoorLocks) featureState;
             boolean doorsOpen =
@@ -159,6 +160,6 @@ public class HmVehicleState implements VehicleState {
                     .build());
         }
 
-        return builder.build();
+        return builder;
     }
 }
