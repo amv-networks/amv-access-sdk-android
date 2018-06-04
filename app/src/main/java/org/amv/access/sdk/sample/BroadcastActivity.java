@@ -43,6 +43,13 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
     RelativeLayout connectedView;
     @BindView(R.id.lock_button)
     Button lockButton;
+
+    @BindView(R.id.request_vehicle_state_button)
+    Button requestVehicleStateButton;
+
+    @BindView(R.id.disconnect_button)
+    Button disconnectButton;
+
     @BindView(R.id.lock_state_text_view)
     TextView lockStateText;
 
@@ -92,6 +99,9 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
         controller.connect(this.accessCertId);
 
         lockButton.setOnClickListener(view -> controller.lockUnlockDoors());
+        requestVehicleStateButton.setOnClickListener(view -> controller.requestVehicleState());
+        disconnectButton.setOnClickListener(view -> controller.sendDisconnectCommand());
+
         setSwitchColor(chargingPlugSwitch);
         setSwitchColor(keySwitch);
         setSwitchColor(doorsSwitch);
@@ -142,12 +152,16 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
                 showProgressBar(false);
                 updateProgressBarSubtext(false, null);
                 lockButton.setEnabled(true);
+                disconnectButton.setEnabled(true);
+                requestVehicleStateButton.setEnabled(true);
                 break;
             }
             case VEHICLE_UPDATING: {
                 updateProgressBarSubtext(true, getString(R.string.updating));
                 showProgressBar(true);
                 lockButton.setEnabled(false);
+                disconnectButton.setEnabled(false);
+                requestVehicleStateButton.setEnabled(false);
                 break;
             }
         }

@@ -29,12 +29,17 @@ public interface IBluetoothController {
     void lockUnlockDoors();
 
     /**
+     * Request current vehicle state.
+     */
+    void requestVehicleState();
+
+    /**
+     * Request current vehicle state.
+     */
+    void sendDisconnectCommand();
+
+    /**
      * Call this when the activity is destroyed
      */
     void onDestroy();
-
-    /**
-     * @return The vehicle status. It is available only when broadcaster state is VEHICLE_READY
-     */
-    VehicleState getVehicleState();
 }

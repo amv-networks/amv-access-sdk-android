@@ -154,6 +154,52 @@ public class BluetoothController implements IBluetoothController {
     }
 
     @Override
+    public void requestVehicleState() {
+        if (state != VEHICLE_READY) {
+            view.showAlert(context.getString(R.string.bluetooth_module_not_ready_title),
+                    context.getString(R.string.bluetooth_module_not_ready_text));
+            return;
+        }
+
+        updateState(VEHICLE_UPDATING);
+
+        CommandFactory commandFactory = accessSdk.commandFactory();
+        Command sendVehicleStatusCommand = commandFactory.sendVehicleStatus();
+
+        this.communicationManager.sendCommand(sendVehicleStatusCommand)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(next -> {
+                    Log.d(TAG, "Command successfully sent.");
+                }, error -> {
+                    view.showAlert(context.getString(R.string.could_not_send_command), error.getMessage());
+                    updateState(VEHICLE_READY);
+                });
+    }
+
+    @Override
+    public void sendDisconnectCommand() {
+        if (state != VEHICLE_READY) {
+            view.showAlert(context.getString(R.string.bluetooth_module_not_ready_title),
+                    context.getString(R.string.bluetooth_module_not_ready_text));
+            return;
+        }
+
+        updateState(VEHICLE_UPDATING);
+
+        CommandFactory commandFactory = accessSdk.commandFactory();
+        Command disconnectCommand = commandFactory.disconnect();
+
+        this.communicationManager.sendCommand(disconnectCommand)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(next -> {
+                    Log.d(TAG, "Command successfully sent.");
+                }, error -> {
+                    view.showAlert(context.getString(R.string.could_not_send_command), error.getMessage());
+                    updateState(VEHICLE_READY);
+                });
+    }
+
+    @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy: ");
 
@@ -167,14 +213,6 @@ public class BluetoothController implements IBluetoothController {
         RefWatcher refWatcher = AccessDemoApplication.getRefWatcher(context);
         refWatcher.watch(this);
         refWatcher.watch(this.communicationManager);
-    }
-
-    @Override
-    public VehicleState getVehicleState() {
-        if (state != VEHICLE_READY) {
-            return null;
-        }
-        return latestVehicleStateRef.get();
     }
 
     private Observable<Boolean> terminateConnectionManager() {
