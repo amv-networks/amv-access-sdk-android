@@ -180,7 +180,7 @@
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:layout_alignParentBottom="true"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="10dp"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -207,11 +207,29 @@
                 android:layout_height="wrap_content"
                 android:text="@string/request_vehicle_state_btn_text" />
 
-            <Button
-                android:id="@+id/disconnect_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/disconnect_btn_text" />
+            <View android:id="@+id/split_view"
+                android:layout_width="0dp"
+                android:layout_height="0dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/disconnect_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/disconnect_btn_text" />
+
+                <Button
+                    android:id="@+id/disconnect_and_stop_broadcasting_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/disconnect_and_stop_broadcasting_btn_text" />
+            </LinearLayout>
+
         </LinearLayout>
     </RelativeLayout>
 </RelativeLayout>

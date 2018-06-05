@@ -30,6 +30,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.amv.access.sdk.sample.logic.IBluetoothController.State.IDLE;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_READY;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_UPDATING;
 
@@ -165,6 +166,7 @@ public class BluetoothController implements IBluetoothController {
 
         CommandFactory commandFactory = accessSdk.commandFactory();
         Command sendVehicleStatusCommand = commandFactory.sendVehicleStatus();
+        this.sentCommand = sendVehicleStatusCommand.getType();
 
         this.communicationManager.sendCommand(sendVehicleStatusCommand)
                 .observeOn(AndroidSchedulers.mainThread())

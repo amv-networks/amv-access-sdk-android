@@ -41,14 +41,15 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
 
     @BindView(R.id.connected_view)
     RelativeLayout connectedView;
+
     @BindView(R.id.lock_button)
     Button lockButton;
-
     @BindView(R.id.request_vehicle_state_button)
     Button requestVehicleStateButton;
-
     @BindView(R.id.disconnect_button)
     Button disconnectButton;
+    @BindView(R.id.disconnect_and_stop_broadcasting_button)
+    Button disconnectAndStopBroadcastingButton;
 
     @BindView(R.id.lock_state_text_view)
     TextView lockStateText;
@@ -101,6 +102,9 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
         lockButton.setOnClickListener(view -> controller.lockUnlockDoors());
         requestVehicleStateButton.setOnClickListener(view -> controller.requestVehicleState());
         disconnectButton.setOnClickListener(view -> controller.sendDisconnectCommand());
+        disconnectAndStopBroadcastingButton.setOnClickListener(view -> {
+            this.finish();
+        });
 
         setSwitchColor(chargingPlugSwitch);
         setSwitchColor(keySwitch);
@@ -151,20 +155,30 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
             case VEHICLE_READY: {
                 showProgressBar(false);
                 updateProgressBarSubtext(false, null);
-                lockButton.setEnabled(true);
-                disconnectButton.setEnabled(true);
-                requestVehicleStateButton.setEnabled(true);
+                enableButtons();
                 break;
             }
             case VEHICLE_UPDATING: {
                 updateProgressBarSubtext(true, getString(R.string.updating));
                 showProgressBar(true);
-                lockButton.setEnabled(false);
-                disconnectButton.setEnabled(false);
-                requestVehicleStateButton.setEnabled(false);
+                disableButtons();
                 break;
             }
         }
+    }
+
+    private void enableButtons() {
+        lockButton.setEnabled(true);
+        requestVehicleStateButton.setEnabled(true);
+        disconnectButton.setEnabled(true);
+        disconnectAndStopBroadcastingButton.setEnabled(true);
+    }
+
+    private void disableButtons() {
+        lockButton.setEnabled(false);
+        requestVehicleStateButton.setEnabled(false);
+        disconnectButton.setEnabled(false);
+        disconnectAndStopBroadcastingButton.setEnabled(false);
     }
 
     @Override

@@ -34,7 +34,7 @@ public interface IBluetoothController {
     void requestVehicleState();
 
     /**
-     * Request current vehicle state.
+     * Send disconnect command.
      */
     void sendDisconnectCommand();
 
