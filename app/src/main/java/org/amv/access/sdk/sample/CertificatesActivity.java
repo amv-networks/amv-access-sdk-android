@@ -31,8 +31,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import dagger.android.AndroidInjection;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
@@ -54,11 +57,15 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
     @BindView(R.id.certificates_list_view)
     ListView listView;
 
+    @Inject
     ICertificatesController controller;
+
     CertificatesAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AndroidInjection.inject(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
@@ -67,7 +74,6 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
         setRefreshing(true);
         progressBarSubtext.setText(getString(R.string.initializing));
 
-        controller = new CertificatesController();
         controller.initialize(this, getApplicationContext());
 
         refreshButton.setOnClickListener(view -> {

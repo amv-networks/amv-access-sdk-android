@@ -26,7 +26,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import io.reactivex.Observable;
 
-@NotThreadSafe
 public final class AmvSdkInitializer {
     private static final String APPLICATION_PROPERTIES_FILE_NAME = "application.properties";
 
@@ -38,25 +37,18 @@ public final class AmvSdkInitializer {
     private static final String IDENTITY_PUBLIC_KEY_PROPERTY_NAME = "amv.access.identity.publicKey";
     private static final String IDENTITY_PRIVATE_KEY_PROPERTY_NAME = "amv.access.identity.privateKey";
 
-    private static final AtomicReference<AccessSdk> INSTANCE = new AtomicReference<>();
-
-    public static synchronized Observable<AccessSdk> create(Context context) {
+    @VisibleForTesting
+    public static Observable<AccessSdk> create(Context context) {
         return create(context, AccessSdkOptionsImpl.builder()
                 .accessApiContext(createAccessApiContext(context))
                 .identity(createIdentity(context).orNull())
                 .build());
     }
 
-    public static synchronized Observable<AccessSdk> create(Context context, AccessSdkOptions accessSdkOptions) {
-        if (INSTANCE.get() != null) {
-            return Observable.just(INSTANCE.get());
-        }
-
+    @VisibleForTesting
+    public static Observable<AccessSdk> create(Context context, AccessSdkOptions accessSdkOptions) {
         try {
             AccessSdk accessSdk = AmvAccessSdk.create(context, accessSdkOptions);
-
-            INSTANCE.set(accessSdk);
-
             return accessSdk.initialize();
         } catch (Exception e) {
             return Observable.error(e);
@@ -77,7 +69,6 @@ public final class AmvSdkInitializer {
      * @param context the application context
      * @return an access api context with values read from a properties file
      */
-    @VisibleForTesting
     public static AccessApiContext createAccessApiContext(Context context) {
         PropertiesReader propertiesReader = new PropertiesReader(context);
         Properties applicationProperties = propertiesReader.getProperties(APPLICATION_PROPERTIES_FILE_NAME);
@@ -102,7 +93,6 @@ public final class AmvSdkInitializer {
      * @param context the application context
      * @return an identity object
      */
-    @VisibleForTesting
     public static Optional<Identity> createIdentity(Context context) {
         PropertiesReader propertiesReader = new PropertiesReader(context);
         Properties applicationProperties = propertiesReader.getProperties(APPLICATION_PROPERTIES_FILE_NAME);

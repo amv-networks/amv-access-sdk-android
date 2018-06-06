@@ -30,17 +30,19 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.amv.access.sdk.sample.logic.IBluetoothController.State.IDLE;
+import static java.util.Objects.requireNonNull;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_READY;
 import static org.amv.access.sdk.sample.logic.IBluetoothController.State.VEHICLE_UPDATING;
 
 public class BluetoothController implements IBluetoothController {
-    public static final String TAG = "BluetoothController";
+    private static final String TAG = "BluetoothController";
 
-    private BluetoothCommunicationManager communicationManager;
+    private final AccessSdk accessSdk;
+
     private IBluetoothView view;
     private Context context;
-    private AccessSdk accessSdk;
+
+    private BluetoothCommunicationManager communicationManager;
 
     private final AtomicBoolean initializing = new AtomicBoolean(true);
     private final AtomicLong retryCounter = new AtomicLong(0);
@@ -57,19 +59,16 @@ public class BluetoothController implements IBluetoothController {
     private volatile Disposable incomingFailureSubscription;
     private volatile Disposable vehicleStateSubscription;
 
+    public BluetoothController(AccessSdk accessSdk) {
+        this.accessSdk = requireNonNull(accessSdk);
+    }
+
     @Override
     public void initialize(IBluetoothView view, Context context) {
-        this.view = view;
-        this.context = context;
+        this.view = requireNonNull(view);
+        this.context = requireNonNull(context);
 
-        AmvSdkInitializer.create(context.getApplicationContext())
-                .doOnNext(sdk -> this.accessSdk = sdk)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(sdk -> {
-                    view.onInitializeFinished();
-                }, e -> {
-                    view.onInitializeFailed(AccessSdkException.wrap(e));
-                });
+        view.onInitializeFinished();
     }
 
     @Override

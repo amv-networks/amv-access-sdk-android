@@ -23,8 +23,11 @@ import org.amv.access.sdk.spi.error.AccessSdkException;
 import org.amv.access.sdk.spi.identity.SerialNumber;
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import dagger.android.AndroidInjection;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
@@ -63,12 +66,15 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
     @BindView(R.id.doors_switch)
     Switch doorsSwitch;
 
-    BluetoothController controller;
+    @Inject
+    IBluetoothController controller;
 
     private String accessCertId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AndroidInjection.inject(this);
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_broadcast);
@@ -81,7 +87,6 @@ public class BroadcastActivity extends Activity implements IBluetoothView {
             this.accessCertId = givenAccessCertId;
         }
 
-        this.controller = new BluetoothController();
         this.controller.initialize(this, getApplicationContext());
     }
 
