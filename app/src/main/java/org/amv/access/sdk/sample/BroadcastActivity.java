@@ -7,7 +7,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -16,7 +16,6 @@ import android.widget.TextView;
 
 import com.squareup.leakcanary.RefWatcher;
 
-import org.amv.access.sdk.sample.logic.BluetoothController;
 import org.amv.access.sdk.sample.logic.IBluetoothController;
 import org.amv.access.sdk.sample.logic.IBluetoothView;
 import org.amv.access.sdk.spi.error.AccessSdkException;

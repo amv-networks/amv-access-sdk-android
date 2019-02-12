@@ -2,7 +2,7 @@ package org.amv.access.sdk.sample.logic;
 
 
 import android.content.Context;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
@@ -20,9 +20,6 @@ import org.amv.access.sdk.spi.identity.impl.IdentityImpl;
 import org.amv.access.sdk.spi.identity.impl.SerialNumberImpl;
 
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.annotation.concurrent.NotThreadSafe;
 
 import io.reactivex.Observable;
 

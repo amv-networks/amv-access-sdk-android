@@ -14,7 +14,7 @@ android {
         versionCode project.ext.versionCode
         versionName project.ext.versionName
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -51,6 +51,6 @@ dependencies {
     testImplementation "junit:junit:${junitVersion}"
     testImplementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
     testImplementation "org.mockito:mockito-core:${mockitoVersion}"
-    androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
-    androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"
+    androidTestImplementation 'androidx.test:runner:1.1.2-alpha01'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.2-alpha01'
 }
