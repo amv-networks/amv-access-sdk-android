@@ -3,7 +3,11 @@ package org.amv.access.sdk.hm;
 import android.content.Context;
 import android.util.Log;
 
+import com.highmobility.crypto.value.PrivateKey;
+import com.highmobility.crypto.value.PublicKey;
+import com.highmobility.hmkit.HMKit;
 import com.highmobility.hmkit.Manager;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.sdk.hm.bluetooth.BluetoothBroadcaster;
 import org.amv.access.sdk.hm.bluetooth.HmBluetoothBroadcaster;
@@ -46,7 +50,7 @@ public class AmvAccessSdk implements AccessSdk {
 
     private final Context context;
     private final AccessSdkOptions accessSdkOptions;
-    private final Manager manager;
+    private final HMKit manager;
     private final LocalStorage localStorage;
     private final HmIdentityManager identityManager;
     private final HmCertificateManager certificateManager;
@@ -54,7 +58,7 @@ public class AmvAccessSdk implements AccessSdk {
 
     AmvAccessSdk(Context context,
                  AccessSdkOptions accessSdkOptions,
-                 Manager manager,
+                 HMKit manager,
                  LocalStorage localStorage,
                  HmIdentityManager identityManager,
                  HmCertificateManager certificateManager,
@@ -114,6 +118,7 @@ public class AmvAccessSdk implements AccessSdk {
         Observable<com.highmobility.crypto.DeviceCertificate> hmDeviceCertObservable = localStorage
                 .findDeviceCertificate()
                 .map(DeviceCertificate::toByteArray)
+                .map(Bytes::new)
                 .map(com.highmobility.crypto.DeviceCertificate::new);
 
         return Observable.zip(
@@ -121,10 +126,10 @@ public class AmvAccessSdk implements AccessSdk {
                 devicePrivateKeyObservable,
                 hmDeviceCertObservable,
                 (issuerPublicKey, devicePrivateKey, deviceCert) -> {
-                    manager.initialize(
+                    manager.initialise(
                             deviceCert,
-                            devicePrivateKey,
-                            issuerPublicKey,
+                            new PrivateKey(new Bytes(devicePrivateKey)),
+                            new PublicKey(new Bytes(issuerPublicKey)),
                             context);
                     return true;
                 }

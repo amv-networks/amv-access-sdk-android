@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.highmobility.crypto.Crypto;
 import com.highmobility.utils.Base64;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.client.android.AccessApiException;
 import org.amv.access.client.android.AccessCertClient;
@@ -105,7 +106,7 @@ public class AmvHmRemote implements Remote {
 
                     String serialNumberHex = deviceCertificate
                             .getDeviceSerial().getSerialNumberHex();
-                    return client.fetchAccessCertificates(nonce[0], nonce[1], serialNumberHex);
+                    return client.fetchAccessCertificates(nonce[0], nonce[1], serialNumberHex, 1);
                 })
                 .onErrorResumeNext(e -> {
                     String errorMessage = getErrorMessage(e);
@@ -130,7 +131,7 @@ public class AmvHmRemote implements Remote {
 
     private String[] createNonceAndSignature(Keys keys) {
         byte[] nonce = generateNonce();
-        byte[] nonceSignature = Crypto.sign(nonce, keys.getPrivateKey());
+        byte[] nonceSignature = Crypto.sign(nonce, keys.getPrivateKey()).getByteArray();
         return new String[]{Base64.encode(nonce), Base64.encode(nonceSignature)};
     }
 
@@ -194,7 +195,7 @@ public class AmvHmRemote implements Remote {
             byte[] deviceCertificate = Base64.decode(deviceCertificateDto.device_certificate);
 
             return new HmDeviceCertificate(
-                    new com.highmobility.crypto.DeviceCertificate(deviceCertificate)
+                    new com.highmobility.crypto.DeviceCertificate(new Bytes(deviceCertificate))
             );
         }
 

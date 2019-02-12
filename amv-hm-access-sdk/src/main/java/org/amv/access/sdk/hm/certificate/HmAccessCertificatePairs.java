@@ -1,6 +1,8 @@
 package org.amv.access.sdk.hm.certificate;
 
 import com.highmobility.crypto.AccessCertificate;
+import com.highmobility.utils.Base64;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.client.android.model.AccessCertificateDto;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
@@ -32,8 +34,9 @@ final class HmAccessCertificatePairs {
 
     private static HmAccessCertificate fromBase64OrThrow(String accessCertificateBase64) {
         try {
-            return new HmAccessCertificate(new AccessCertificate(accessCertificateBase64));
-        } catch (IllegalAccessException e) {
+            Bytes accessCertBytes = new Bytes(Base64.decode(accessCertificateBase64));
+            return new HmAccessCertificate(new AccessCertificate(accessCertBytes));
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

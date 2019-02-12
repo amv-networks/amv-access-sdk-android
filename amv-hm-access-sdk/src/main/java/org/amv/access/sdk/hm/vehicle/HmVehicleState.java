@@ -1,18 +1,16 @@
 package org.amv.access.sdk.hm.vehicle;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
+import com.highmobility.autoapi.ChargeState;
 import com.highmobility.autoapi.Command;
-import com.highmobility.autoapi.DoorLockState;
-import com.highmobility.autoapi.incoming.ChargeState;
-import com.highmobility.autoapi.incoming.DiagnosticsState;
-import com.highmobility.autoapi.incoming.IncomingCommand;
-import com.highmobility.autoapi.incoming.KeyfobPosition;
-import com.highmobility.autoapi.incoming.LockState;
-import com.highmobility.autoapi.incoming.VehicleStatus;
-import com.highmobility.autoapi.vehiclestatus.Charging;
-import com.highmobility.autoapi.vehiclestatus.Diagnostics;
-import com.highmobility.autoapi.vehiclestatus.DoorLocks;
-import com.highmobility.autoapi.vehiclestatus.FeatureState;
+import com.highmobility.autoapi.DiagnosticsState;
+import com.highmobility.autoapi.KeyfobPosition;
+import com.highmobility.autoapi.LockState;
+import com.highmobility.autoapi.VehicleStatus;
+import com.highmobility.autoapi.property.ChargingState;
+import com.highmobility.autoapi.property.doors.DoorLockAndPositionState;
+import com.highmobility.autoapi.property.doors.DoorPosition;
 
 import org.amv.access.sdk.spi.vehicle.VehicleState;
 import org.amv.access.sdk.spi.vehicle.impl.SimpleChargingPlugState;
@@ -20,6 +18,8 @@ import org.amv.access.sdk.spi.vehicle.impl.SimpleDoorLockState;
 import org.amv.access.sdk.spi.vehicle.impl.SimpleDoorsPosition;
 import org.amv.access.sdk.spi.vehicle.impl.SimpleKeyPosition;
 import org.amv.access.sdk.spi.vehicle.impl.SimpleMileage;
+
+import java.util.List;
 
 import lombok.Builder;
 import lombok.Value;
@@ -63,50 +63,54 @@ public class HmVehicleState implements VehicleState {
         return Optional.fromNullable(mileage);
     }
 
-    public HmVehicleState extend(IncomingCommand command) {
+    public HmVehicleState extend(com.highmobility.autoapi.Command command) {
         HmVehicleStateBuilder builder = this.toBuilder();
 
-        if (command.is(Command.DoorLocks.LOCK_STATE)) {
+        if (command.is(LockState.TYPE)) {
             LockState lockState = (LockState) command;
 
-            boolean doorsOpen = lockState.getFrontLeft().getPosition() == DoorLockState.Position.OPEN
-                    || lockState.getFrontRight().getPosition() == DoorLockState.Position.OPEN
-                    || lockState.getRearLeft().getPosition() == DoorLockState.Position.OPEN
-                    || lockState.getRearRight().getPosition() == DoorLockState.Position.OPEN;
+            List<DoorLockAndPositionState> doorLockAndPositionStates = Lists.newArrayList(lockState.getDoorLockAndPositionStates());
+            boolean anyDoorOpen = false;
+            for (DoorLockAndPositionState doorState : doorLockAndPositionStates) {
+                if (doorState.getDoorPosition() == DoorPosition.OPEN) {
+                    anyDoorOpen = true;
+                    break;
+                }
+            }
 
             builder
                     .doorLocksState(SimpleDoorLockState.builder()
                             .locked(lockState.isLocked())
                             .build())
                     .doorsPositionState(SimpleDoorsPosition.builder()
-                            .open(doorsOpen)
+                            .open(anyDoorOpen)
                             .build());
 
-        } else if (command.is(Command.Charging.CHARGE_STATE)) {
+        } else if (command.is(ChargeState.TYPE)) {
             ChargeState state = (ChargeState) command;
-            boolean notPluggedIn = state.getChargingState() == ChargeState.ChargingState.DISCONNECTED;
+            boolean notPluggedIn = state.getChargingState() == ChargingState.DISCONNECTED;
 
             builder.chargingPlugState(SimpleChargingPlugState.builder()
                     .plugged(!notPluggedIn)
                     .build());
-        } else if (command.is(Command.Diagnostics.DIAGNOSTICS_STATE)) {
+        } else if (command.is(DiagnosticsState.TYPE)) {
             DiagnosticsState state = (DiagnosticsState) command;
             int mileage = state.getMileage();
 
             builder.mileage(SimpleMileage.builder()
                     .value(mileage)
                     .build());
-        } else if (command.is(Command.KeyfobPosition.KEYFOB_POSITION)) {
+        } else if (command.is(KeyfobPosition.TYPE)) {
             KeyfobPosition state = (KeyfobPosition) command;
-            boolean keyPresent = state.getPosition() == KeyfobPosition.Position.INSIDE_CAR;
+            boolean keyPresent = state.getKeyfobPosition() == com.highmobility.autoapi.property.KeyfobPosition.INSIDE_CAR;
 
             builder.keyPosition(SimpleKeyPosition.builder()
                     .known(keyPresent)
                     .build());
-        } else if (command.is(Command.VehicleStatus.VEHICLE_STATUS)) {
+        } else if (command.is(VehicleStatus.TYPE)) {
             VehicleStatus vehicleStatus = (VehicleStatus) command;
-            FeatureState[] statesOrNull = vehicleStatus.getFeatureStates();
-            FeatureState[] states = statesOrNull == null ? new FeatureState[0] : statesOrNull;
+            Command[] statesOrNull = vehicleStatus.getStates();
+            Command[] states = statesOrNull == null ? new Command[0] : statesOrNull;
 
             return extend(states).build();
         }
@@ -114,46 +118,50 @@ public class HmVehicleState implements VehicleState {
         return builder.build();
     }
 
-    private HmVehicleStateBuilder extend(FeatureState[] featureStates) {
+    private HmVehicleStateBuilder extend(Command[] featureStates) {
         HmVehicleStateBuilder builder = this.toBuilder();
-        for (FeatureState featureState : featureStates) {
+        for (Command featureState : featureStates) {
             builder = extend(builder, featureState);
         }
         return builder;
     }
 
-    private HmVehicleStateBuilder extend(HmVehicleStateBuilder builder, FeatureState featureState) {
-        if (featureState.getIdentifier() == Command.Identifier.DOOR_LOCKS) {
-            DoorLocks lockState = (DoorLocks) featureState;
-            boolean doorsOpen =
-                    lockState.getFrontLeft().getPosition() == DoorLockState.Position.OPEN
-                            || lockState.getFrontRight().getPosition() == DoorLockState.Position.OPEN
-                            || lockState.getRearLeft().getPosition() == DoorLockState.Position.OPEN
-                            || lockState.getRearRight().getPosition() == DoorLockState.Position.OPEN;
+    private HmVehicleStateBuilder extend(HmVehicleStateBuilder builder, Command featureState) {
+        if (featureState.is(LockState.TYPE)) {
+            LockState lockState = (LockState) featureState;
+
+            List<DoorLockAndPositionState> doorLockAndPositionStates = Lists.newArrayList(lockState.getDoorLockAndPositionStates());
+            boolean anyDoorOpen = false;
+            for (DoorLockAndPositionState doorState : doorLockAndPositionStates) {
+                if (doorState.getDoorPosition() == DoorPosition.OPEN) {
+                    anyDoorOpen = true;
+                    break;
+                }
+            }
 
             builder.doorLocksState(SimpleDoorLockState.builder()
                     .locked(lockState.isLocked())
                     .build())
                     .doorsPositionState(SimpleDoorsPosition.builder()
-                            .open(doorsOpen)
+                            .open(anyDoorOpen)
                             .build());
-        } else if (featureState.getIdentifier() == Command.Identifier.CHARGING) {
-            Charging state = (Charging) featureState;
-            boolean notPluggedIn = state.getChargingState() == ChargeState.ChargingState.DISCONNECTED;
+        } else if (featureState.is(ChargeState.TYPE)) {
+            ChargeState state = (ChargeState) featureState;
+            boolean notPluggedIn = state.getChargingState() == ChargingState.DISCONNECTED;
+
             builder.chargingPlugState(SimpleChargingPlugState.builder()
                     .plugged(!notPluggedIn)
                     .build());
-        } else if (featureState.getIdentifier() == Command.Identifier.DIAGNOSTICS) {
-            int mileage = ((Diagnostics) featureState).getMileage();
+        } else if (featureState.is(DiagnosticsState.TYPE)) {
+            DiagnosticsState state = (DiagnosticsState) featureState;
+            int mileage = state.getMileage();
+
             builder.mileage(SimpleMileage.builder()
                     .value(mileage)
                     .build());
-        } else if (featureState.getIdentifier() == Command.Identifier.KEYFOB_POSITION) {
-            com.highmobility.autoapi.vehiclestatus.KeyfobPosition keyfobPosition =
-                    ((com.highmobility.autoapi.vehiclestatus.KeyfobPosition) featureState);
-
-            boolean keyPresent = keyfobPosition.getPosition() ==
-                    KeyfobPosition.Position.INSIDE_CAR;
+        } else if (featureState.is(KeyfobPosition.TYPE)) {
+            KeyfobPosition state = (KeyfobPosition) featureState;
+            boolean keyPresent = state.getKeyfobPosition() == com.highmobility.autoapi.property.KeyfobPosition.INSIDE_CAR;
 
             builder.keyPosition(SimpleKeyPosition.builder()
                     .known(keyPresent)

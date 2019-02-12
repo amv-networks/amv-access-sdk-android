@@ -5,6 +5,7 @@ import android.util.Log;
 import com.google.common.base.Optional;
 import com.google.gson.reflect.TypeToken;
 import com.highmobility.utils.Base64;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.hm.error.SdkNotInitializedException;
@@ -50,6 +51,8 @@ public class HmLocalStorage implements LocalStorage {
                 .doOnNext(foo -> Log.d(TAG, "findDeviceCertificate"))
                 .flatMap(foo -> storage.findString(KEY_DEVICE_CERTIFICATE))
                 .flatMap(deviceCertOptional -> deviceCertOptional
+                        .transform(Base64::decode)
+                        .transform(Bytes::new)
                         .transform(com.highmobility.crypto.DeviceCertificate::new)
                         .transform(HmDeviceCertificate::new)
                         .transform(Observable::just)

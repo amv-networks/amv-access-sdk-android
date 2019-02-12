@@ -2,16 +2,14 @@ package org.amv.access.sdk.hm.bluetooth;
 
 import android.util.Log;
 
-import com.google.common.base.Optional;
-import com.highmobility.autoapi.CommandParseException;
-import com.highmobility.autoapi.incoming.IncomingCommand;
+import com.highmobility.autoapi.CommandResolver;
 import com.highmobility.hmkit.ConnectedLink;
 import com.highmobility.hmkit.ConnectedLinkListener;
-import com.highmobility.hmkit.Error.LinkError;
+import com.highmobility.hmkit.error.LinkError;
 import com.highmobility.hmkit.Link;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.sdk.hm.AmvSdkSchedulers;
-import org.amv.access.sdk.hm.communication.HmCommandFactory;
 import org.amv.access.sdk.spi.bluetooth.ConnectionState;
 import org.amv.access.sdk.spi.bluetooth.ConnectionStateChangeEvent;
 import org.amv.access.sdk.spi.bluetooth.IncomingCommandEvent;
@@ -50,7 +48,7 @@ public class HmBluetoothConnection implements BluetoothConnection {
         return Observable.<Boolean>create(subscriber -> {
             Log.d(TAG, "Sending command '" + command.getType().getId() + "'");
 
-            connectedLink.sendCommand(command.getBytes(), new Link.CommandCallback() {
+            connectedLink.sendCommand(new Bytes(command.getBytes()), new Link.CommandCallback() {
                 @Override
                 public void onCommandSent() {
                     Log.d(TAG, "Command '" + command.getType().getId() + "' successfully sent");
@@ -76,7 +74,7 @@ public class HmBluetoothConnection implements BluetoothConnection {
     @Override
     public Observable<Boolean> terminate() {
         return Observable.fromCallable(() -> {
-            connectedLink.sendCommand(commandFactory.disconnect().getBytes(), new NoopCommandCallback());
+            connectedLink.sendCommand(new Bytes(commandFactory.disconnect().getBytes()), new NoopCommandCallback());
             return true;
         }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
@@ -137,33 +135,20 @@ public class HmBluetoothConnection implements BluetoothConnection {
         }
 
         @Override
-        public void onCommandReceived(Link link, byte[] bytes) {
-            Optional<IncomingCommand> commandOptional = parseIncomingCommand(bytes);
-            if (!commandOptional.isPresent()) {
-                Log.w(TAG, "Unknown or erroneous command received - ignoring.");
-                return;
-            }
-
-            IncomingCommand command = commandOptional.get();
-
-            Log.d(TAG, "Command received: " + command
-                    .getIdentifier()
-                    .name());
-
-            incomingCommandsSubject.onNext(SimpleIncomingCommandEvent.builder()
-                    .command(bytes)
-                    .build());
-        }
-
-
-        private Optional<IncomingCommand> parseIncomingCommand(byte[] bytes) {
+        public void onCommandReceived(Link link, Bytes bytes) {
             try {
-                return Optional.of(IncomingCommand.create(bytes));
-            } catch (CommandParseException e) {
-                Log.w(TAG, "Error while parsing command", e);
-                return Optional.absent();
+                com.highmobility.autoapi.Command command = CommandResolver.resolve(bytes);
+
+                Log.d(TAG, "Command received: " + command.getType());
+
+                incomingCommandsSubject.onNext(SimpleIncomingCommandEvent.builder()
+                        .command(bytes.getByteArray())
+                        .build());
+            } catch (Exception e) {
+                Log.e(TAG, "Unknown incoming command received.");
             }
         }
+
     }
 
     private static class NoopCommandCallback implements Link.CommandCallback {

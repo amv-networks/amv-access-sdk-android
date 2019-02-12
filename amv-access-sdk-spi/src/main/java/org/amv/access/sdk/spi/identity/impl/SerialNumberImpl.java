@@ -27,4 +27,17 @@ public class SerialNumberImpl implements SerialNumber {
     public String getSerialNumberHex() {
         return BaseEncoding.base16().lowerCase().encode(serialNumber);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SerialNumberImpl that = (SerialNumberImpl) o;
+        return Arrays.equals(serialNumber, that.serialNumber);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(serialNumber);
+    }
 }

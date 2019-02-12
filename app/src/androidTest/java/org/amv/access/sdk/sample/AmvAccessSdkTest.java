@@ -9,7 +9,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Optional;
 import com.google.common.io.BaseEncoding;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.amv.access.sdk.hm.AccessApiContext;
 import org.amv.access.sdk.hm.AmvAccessSdk;

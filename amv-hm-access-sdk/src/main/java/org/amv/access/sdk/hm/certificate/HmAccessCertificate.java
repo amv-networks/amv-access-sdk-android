@@ -19,32 +19,32 @@ class HmAccessCertificate implements AccessCertificate {
 
     @Override
     public byte[] toByteArray() {
-        return Arrays.copyOf(delegate.getBytes(),
-                delegate.getBytes().length);
+        return Arrays.copyOf(delegate.getBytes().getByteArray(),
+                delegate.getBytes().getLength());
     }
 
     @Override
     public SerialNumber getProviderSerial() {
         return SerialNumberImpl.builder()
-                .serialNumber(delegate.getProviderSerial())
+                .serialNumber(delegate.getProviderSerial().getByteArray())
                 .build();
     }
 
     @Override
     public SerialNumber getGainerSerial() {
         return SerialNumberImpl.builder()
-                .serialNumber(delegate.getGainerSerial())
+                .serialNumber(delegate.getGainerSerial().getByteArray())
                 .build();
     }
 
     @Override
     public Calendar getStartDate() {
-        return delegate.getStartDate();
+        return delegate.getStartDate().getCalendar();
     }
 
     @Override
     public Calendar getEndDate() {
-        return delegate.getEndDate();
+        return delegate.getEndDate().getCalendar();
     }
 
     @Override

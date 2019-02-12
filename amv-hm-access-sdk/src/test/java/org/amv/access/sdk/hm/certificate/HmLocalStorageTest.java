@@ -3,8 +3,9 @@ package org.amv.access.sdk.hm.certificate;
 
 import com.google.common.base.Optional;
 import com.highmobility.utils.Base64;
+import com.highmobility.value.Bytes;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.amv.access.sdk.hm.error.SdkNotInitializedException;
 import org.amv.access.sdk.hm.secure.SecureStorage;
@@ -29,8 +30,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class HmLocalStorageTest {
-    private static final String RANDOM_DEVICE_CERT_BASE64 = "dG1jcwAAEjRWeJq83vAAAESD1wCHryUaZL8YrHvGDUXBxXz4wDGgVRd97h/czJx7dIL/P9OGDd9qLNMI23/tCESHUCiokUvKp0b0Khf3CFJG88KVSqR5lhPa6rhUZhYBmz76iuzMOxbj8i8znubsOeNvp2bhelLQCihdhaBDARf0LLfk4O0mUMxFtdNHKtqQ5dfE79AqxnfZ";
-    private static final String RANDOM_ACCESS_CERT_BASE64 = "ASOsPQ7dcIjuyn4QnCxQgp3iKYE8hszMrvsD7Lnn9YiJMkSHsGrpychf4aF6ZwuNP+R1RKfMG2DhGl4jGL+TcdGZdWNsQHhU5s9g340t/y/nnhEBBQwoEwEFDCgHEAAfCAAAQA==";
+    private static final String RANDOM_DEVICE_CERT_BASE64 = "WFhYWAAAEjRWeJq83vAAAK+vdxh+UxMaxHp7V8rqGO0WUrxii1wd9ToGWVFLqztSLrgfdytAjtL89tJRIHZ33ai4D7b154ZTv/xuq+IqW/L/2DeqTlhsp/lsvHuYUp62cTptOwyj7uJ/HXEqw0+ims5z08Zi6XN+7t1Pa3EB4al+IHy7pwuUQPkT0Myr+1dhia0ZBShSQ20x";
+    private static final String RANDOM_ACCESS_CERT_BASE64 = "AURFTU+XdapkXy/AslSvr3cYflMTGsR6e1fK6hjtFlK8YotcHfU6BllRS6s7Ui64H3crQI7S/PbSUSB2d92ouA+29eeGU7/8bqviKlvy/9g3qk5YbKf5EwIKDDgVAgwMOAcQAB8IAABA";
 
     private HmLocalStorage sut;
 
@@ -55,7 +56,7 @@ public class HmLocalStorageTest {
 
     @Test
     public void itShouldSuccessfullyStoreDeviceCertificate() throws Exception {
-        byte[] randomDeviceCertBytes = Base64.decode(RANDOM_DEVICE_CERT_BASE64);
+        Bytes randomDeviceCertBytes = new Bytes(Base64.decode(RANDOM_DEVICE_CERT_BASE64));
         HmDeviceCertificate hmDeviceCertificate = new HmDeviceCertificate(new com.highmobility.crypto.DeviceCertificate(randomDeviceCertBytes));
 
         Boolean storeSuccess = sut.storeDeviceCertificate(hmDeviceCertificate)
@@ -126,7 +127,7 @@ public class HmLocalStorageTest {
     @Test
     public void itShouldSuccessfullyStoreAccessCertificates() throws Exception {
         UUID uuid = UUID.randomUUID();
-        byte[] randomAccessCertBytes = Base64.decode(RANDOM_ACCESS_CERT_BASE64);
+        Bytes randomAccessCertBytes = new Bytes(Base64.decode(RANDOM_ACCESS_CERT_BASE64));
         HmAccessCertificate hmAccessCertificate = new HmAccessCertificate(new com.highmobility.crypto.AccessCertificate(randomAccessCertBytes));
         AccessCertificatePair accessCertificatePair = SimpleAccessCertificatePair.builder()
                 .id(uuid.toString())
@@ -141,7 +142,7 @@ public class HmLocalStorageTest {
 
         AccessCertificatePair accessCertificatePair1 = sut.findAccessCertificates().blockingFirst();
         AccessCertificate deviceAccessCertificate = accessCertificatePair1.getDeviceAccessCertificate();
-        assertThat(deviceAccessCertificate.toByteArray(), is(randomAccessCertBytes));
+        assertThat(deviceAccessCertificate.toByteArray(), is(randomAccessCertBytes.getByteArray()));
     }
 
     @Test
@@ -166,7 +167,7 @@ public class HmLocalStorageTest {
     @Test
     public void itShouldSuccessfullyFindExistingAccessCertById() throws Exception {
         UUID uuid = UUID.randomUUID();
-        byte[] randomAccessCertBytes = Base64.decode(RANDOM_ACCESS_CERT_BASE64);
+        Bytes randomAccessCertBytes = new Bytes(Base64.decode(RANDOM_ACCESS_CERT_BASE64));
         HmAccessCertificate hmAccessCertificate = new HmAccessCertificate(new com.highmobility.crypto.AccessCertificate(randomAccessCertBytes));
         AccessCertificatePair accessCertificatePair = SimpleAccessCertificatePair.builder()
                 .id(uuid.toString())
@@ -190,7 +191,7 @@ public class HmLocalStorageTest {
     @Test
     public void itShouldSuccessfullyRemoveExistingAccessCertById() throws Exception {
         UUID uuid = UUID.randomUUID();
-        byte[] randomAccessCertBytes = Base64.decode(RANDOM_ACCESS_CERT_BASE64);
+        Bytes randomAccessCertBytes = new Bytes(Base64.decode(RANDOM_ACCESS_CERT_BASE64));
         HmAccessCertificate hmAccessCertificate = new HmAccessCertificate(new com.highmobility.crypto.AccessCertificate(randomAccessCertBytes));
         AccessCertificatePair accessCertificatePair = SimpleAccessCertificatePair.builder()
                 .id(uuid.toString())
@@ -220,8 +221,9 @@ public class HmLocalStorageTest {
                 .build()).blockingFirst();
         assertThat(storeKeysSuccessful, is(Boolean.TRUE));
 
+        Bytes bytesAccessCert = new Bytes(Base64.decode(RANDOM_ACCESS_CERT_BASE64));
         HmAccessCertificate hmAccessCertificate = new HmAccessCertificate(
-                new com.highmobility.crypto.AccessCertificate(Base64.decode(RANDOM_ACCESS_CERT_BASE64)));
+                new com.highmobility.crypto.AccessCertificate(bytesAccessCert));
         AccessCertificatePair accessCertificatePair = SimpleAccessCertificatePair.builder()
                 .id(UUID.randomUUID().toString())
                 .deviceAccessCertificate(hmAccessCertificate)
@@ -237,8 +239,9 @@ public class HmLocalStorageTest {
                 .blockingFirst();
         assertThat(storeIssuerPublicKeySuccess, is(Boolean.TRUE));
 
+        Bytes bytesDeviceCert = new Bytes(Base64.decode(RANDOM_DEVICE_CERT_BASE64));
         HmDeviceCertificate hmDeviceCertificate = new HmDeviceCertificate(
-                new com.highmobility.crypto.DeviceCertificate(Base64.decode(RANDOM_DEVICE_CERT_BASE64)));
+                new com.highmobility.crypto.DeviceCertificate(bytesDeviceCert));
         Boolean storeDeviceCertSuccess = sut.storeDeviceCertificate(hmDeviceCertificate)
                 .blockingFirst();
 

@@ -3,7 +3,7 @@ package org.amv.access.sdk.hm.identity;
 import com.google.common.io.BaseEncoding;
 import com.highmobility.crypto.Crypto;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.amv.access.sdk.hm.certificate.LocalStorage;
 import org.amv.access.sdk.spi.certificate.CertificateManager;
@@ -77,7 +77,7 @@ public class HmIdentityManagerTest {
         LocalStorage localStorageMock = mock(LocalStorage.class);
 
         SerialNumber serialNumber = SerialNumberImpl.builder()
-                .serialNumber(Crypto.createSerialNumber())
+                .serialNumber(Crypto.createSerialNumber().getByteArray())
                 .build();
         DeviceCertificate deviceCertificateMock = mock(DeviceCertificate.class);
 
@@ -109,7 +109,7 @@ public class HmIdentityManagerTest {
         LocalStorage localStorageMock = mock(LocalStorage.class);
 
         SerialNumber serialNumber = SerialNumberImpl.builder()
-                .serialNumber(Crypto.createSerialNumber())
+                .serialNumber(Crypto.createSerialNumber().getByteArray())
                 .build();
         DeviceCertificate deviceCertificateMock = mock(DeviceCertificate.class);
 
@@ -140,7 +140,7 @@ public class HmIdentityManagerTest {
         LocalStorage localStorageMock = mock(LocalStorage.class);
 
         SerialNumber serialNumber = SerialNumberImpl.builder()
-                .serialNumber(Crypto.createSerialNumber())
+                .serialNumber(Crypto.createSerialNumber().getByteArray())
                 .build();
         DeviceCertificate deviceCertificateMock = mock(DeviceCertificate.class);
 

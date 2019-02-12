@@ -3,10 +3,8 @@ package org.amv.access.sdk.hm.bluetooth;
 import android.util.Log;
 
 import com.google.common.base.Optional;
-import com.highmobility.autoapi.Command.FailureMessage;
-import com.highmobility.autoapi.Command.VehicleStatus;
-import com.highmobility.autoapi.incoming.Failure;
-import com.highmobility.autoapi.incoming.IncomingCommand;
+import com.highmobility.autoapi.CommandResolver;
+import com.highmobility.autoapi.VehicleStatus;
 import com.highmobility.hmkit.Link;
 
 import org.amv.access.sdk.hm.AmvSdkSchedulers;
@@ -204,44 +202,22 @@ public class HmBluetoothCommunicationManager implements BluetoothCommunicationMa
     }
 
     private void transformAndPublish(IncomingCommandEvent commandEvent) {
-        Optional<IncomingCommand> incomingCommandOptional = MoreHmCommands
-                .parseIncomingCommand(commandEvent.getCommand());
-        if (!incomingCommandOptional.isPresent()) {
-            Log.w(TAG, "Could not parse incoming command");
-            return;
+        try {
+            com.highmobility.autoapi.Command incomingCommand = CommandResolver.resolve(commandEvent.getCommand());
+            publishVehicleStateIfEligible(incomingCommand);
+        } catch (Exception e) {
+            incomingFailureSubject.onNext(AccessSdkException.wrap(e));
         }
-
-        IncomingCommand incomingCommand = incomingCommandOptional.get();
-
-        publishVehicleStateIfEligible(incomingCommand);
-        publishFailureIfEligible(incomingCommand);
     }
 
-    private void publishVehicleStateIfEligible(IncomingCommand incomingCommand) {
+    private void publishVehicleStateIfEligible(com.highmobility.autoapi.Command incomingCommand) {
         boolean isVehicleStatusResponse = incomingCommand
-                .is(VehicleStatus.VEHICLE_STATUS);
+                .is(VehicleStatus.TYPE);
 
         if (isVehicleStatusResponse) {
             // updateAndGet is only available on android >= 24
             vehicleState.set(vehicleState.get().extend(incomingCommand));
             vehicleStatusSubject.onNext(vehicleState.get());
-        }
-    }
-
-    private void publishFailureIfEligible(IncomingCommand incomingCommand) {
-        boolean isFailureResponse = incomingCommand.is(FailureMessage.FAILURE_MESSAGE);
-        if (isFailureResponse) {
-            Failure failure = (Failure) incomingCommand;
-            String failureType = failure.getFailedType()
-                    .getIdentifier()
-                    .name();
-            String failureReason = failure.getFailureReason()
-                    .name();
-
-            String message = failureType + ": " + failureReason;
-
-            incomingFailureSubject.onNext(AccessSdkException
-                    .wrap(new Exception(message)));
         }
     }
 

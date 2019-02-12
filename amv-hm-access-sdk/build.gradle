@@ -49,14 +49,14 @@ android {
 }
 
 dependencies {
-    implementation("com.highmobility:hmkit-android:${hmkitVersion}@aar") {
+    implementation("com.highmobility:hmkit-android:${hmkitVersion}") {
         transitive = true
     }
     implementation("com.highmobility:hmkit-auto-api:${hmAutoApiVersion}")
 
     // currently pulled in because it is needed by hmkit (otherwise NoClassDefFoundErrors are thrown)
     // this can be removed once the webservice layer has been externalized by hm
-    implementation 'com.android.volley:volley:1.1.0'
+    implementation 'com.android.volley:volley:1.1.1'
 
     api project(':amv-access-sdk-spi')
     implementation "org.amv.access:access-client-android:${amvAccessClientVersion}"
@@ -72,6 +72,11 @@ dependencies {
     testImplementation "junit:junit:${junitVersion}"
     testImplementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
     testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+
+    testImplementation("com.highmobility:hmkit-android:${hmkitVersion}") {
+        transitive = true
+    }
+    testImplementation("com.highmobility:hmkit-auto-api:${hmAutoApiVersion}")
 
     androidTestImplementation "com.android.support.test:runner:${supportTestVersion}"
     androidTestImplementation "com.android.support.test.espresso:espresso-core:${espressoVersion}"

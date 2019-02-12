@@ -57,7 +57,7 @@ public class AccessDemoApplication extends Application implements HasActivityInj
 
     private void enableStrictModeIfInDebugMode() {
         if (BuildConfig.DEBUG) {
-            enableStrictMode();
+            //enableStrictMode();
         }
     }
 

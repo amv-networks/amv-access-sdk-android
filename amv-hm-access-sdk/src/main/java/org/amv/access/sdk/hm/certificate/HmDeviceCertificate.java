@@ -18,13 +18,13 @@ class HmDeviceCertificate implements DeviceCertificate {
 
     @Override
     public byte[] toByteArray() {
-        return Arrays.copyOf(deviceCertificate.getBytes(), deviceCertificate.getBytes().length);
+        return Arrays.copyOf(deviceCertificate.getBytes().getByteArray(), deviceCertificate.getBytes().getLength());
     }
 
     @Override
     public SerialNumber getDeviceSerial() {
         return SerialNumberImpl.builder()
-                .serialNumber(deviceCertificate.getSerial())
+                .serialNumber(deviceCertificate.getSerial().getByteArray())
                 .build();
     }
 }

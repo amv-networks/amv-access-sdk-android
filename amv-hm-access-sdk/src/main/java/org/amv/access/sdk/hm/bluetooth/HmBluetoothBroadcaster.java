@@ -6,8 +6,9 @@ import android.util.Log;
 import com.highmobility.crypto.AccessCertificate;
 import com.highmobility.hmkit.Broadcaster;
 import com.highmobility.hmkit.ConnectedLink;
-import com.highmobility.hmkit.Error.BroadcastError;
+import com.highmobility.hmkit.error.BroadcastError;
 import com.highmobility.hmkit.Storage.Result;
+import com.highmobility.value.Bytes;
 
 import org.amv.access.sdk.hm.AmvSdkSchedulers;
 import org.amv.access.sdk.spi.bluetooth.BroadcastStateChangeEvent;
@@ -63,10 +64,10 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
             stopBroadcasting();
 
             AccessCertificate deviceAccessCertificate = new AccessCertificate(
-                    accessCertificatePair.getDeviceAccessCertificate().toByteArray()
+                    new Bytes(accessCertificatePair.getDeviceAccessCertificate().toByteArray())
             );
             AccessCertificate vehicleAccessCertificate = new AccessCertificate(
-                    accessCertificatePair.getVehicleAccessCertificate().toByteArray()
+                    new Bytes(accessCertificatePair.getVehicleAccessCertificate().toByteArray())
             );
 
             Log.d(TAG, "register access certificates");
@@ -79,7 +80,8 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
                 throw new IllegalStateException("Failed to store certificate to HMKit");
             }
 
-            this.broadcaster.setBroadcastingTarget(deviceAccessCertificate.getGainerSerial());
+            // TODO: why has this method been removed?
+            // this.broadcaster.setBroadcastingTarget(deviceAccessCertificate.getGainerSerial());
 
             this.broadcaster.setListener(new HmBroadcasterListener());
 

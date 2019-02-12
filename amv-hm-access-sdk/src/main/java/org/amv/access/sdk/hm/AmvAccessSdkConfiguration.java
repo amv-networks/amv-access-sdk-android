@@ -11,6 +11,7 @@ import com.facebook.crypto.CryptoConfig;
 import com.facebook.crypto.keychain.KeyChain;
 import com.facebook.soloader.SoLoader;
 import com.google.common.base.Optional;
+import com.highmobility.hmkit.HMKit;
 import com.highmobility.hmkit.Manager;
 
 import org.amv.access.sdk.hm.certificate.AmvHmRemote;
@@ -56,7 +57,7 @@ class AmvAccessSdkConfiguration {
 
         HmCertificateManager certificateManager = certificateManager(localStorage, remote);
         HmIdentityManager identityManager = identityManager(localStorage, certificateManager);
-        Manager manager = manager();
+        HMKit manager = manager();
         HmCommandFactory commandFactory = commandFactory();
 
         return new AmvAccessSdk(context,
@@ -68,8 +69,8 @@ class AmvAccessSdkConfiguration {
                 commandFactory);
     }
 
-    private Manager manager() {
-        return Manager.getInstance();
+    private HMKit manager() {
+        return HMKit.getInstance();
     }
 
     private HmIdentityManager identityManager(LocalStorage localStorage, CertificateManager certificateManager) {
