@@ -32,9 +32,6 @@ android {
 
     repositories {
         mavenLocal()
-        maven {
-            url "http://jfrog.high-mobility.com/artifactory/gradle-00/"
-        }
     }
 
     task javadoc(type: Javadoc) {

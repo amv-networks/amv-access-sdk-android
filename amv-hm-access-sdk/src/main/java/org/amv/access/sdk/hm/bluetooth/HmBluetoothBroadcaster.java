@@ -4,10 +4,12 @@ package org.amv.access.sdk.hm.bluetooth;
 import android.util.Log;
 
 import com.highmobility.crypto.AccessCertificate;
+import com.highmobility.hmkit.BroadcastConfiguration;
 import com.highmobility.hmkit.Broadcaster;
+import com.highmobility.hmkit.BroadcasterListener;
 import com.highmobility.hmkit.ConnectedLink;
-import com.highmobility.hmkit.error.BroadcastError;
 import com.highmobility.hmkit.Storage.Result;
+import com.highmobility.hmkit.error.BroadcastError;
 import com.highmobility.value.Bytes;
 
 import org.amv.access.sdk.hm.AmvSdkSchedulers;
@@ -80,10 +82,11 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
                 throw new IllegalStateException("Failed to store certificate to HMKit");
             }
 
-            // TODO: why has this method been removed?
-            // this.broadcaster.setBroadcastingTarget(deviceAccessCertificate.getGainerSerial());
-
             this.broadcaster.setListener(new HmBroadcasterListener());
+
+            BroadcastConfiguration broadcastConfig = new BroadcastConfiguration.Builder()
+                    .setBroadcastingTarget(deviceAccessCertificate.getGainerSerial())
+                    .build();
 
             Log.d(TAG, "start broadcasting");
             this.broadcaster.startBroadcasting(new Broadcaster.StartCallback() {
@@ -109,7 +112,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
                     }
                     stopBroadcasting();
                 }
-            });
+            }, broadcastConfig);
         }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
@@ -157,7 +160,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
         return connectedLinkRef.get() != null;
     }
 
-    private class HmBroadcasterListener implements com.highmobility.hmkit.BroadcasterListener {
+    private class HmBroadcasterListener implements BroadcasterListener {
         @Override
         public void onStateChanged(Broadcaster.State oldState) {
             Log.d(TAG, "broadcaster state changed from "
