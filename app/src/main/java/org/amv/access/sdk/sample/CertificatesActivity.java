@@ -147,6 +147,9 @@ public class CertificatesActivity extends Activity implements ICertificatesView 
                 .setCancelable(false)
                 .setPositiveButton(getString(R.string.ok), null)
                 .show();
+
+        controller.getAccessCertificates().toList()
+                .subscribe(this::onCertificatesDownloaded);
     }
 
     @Override
