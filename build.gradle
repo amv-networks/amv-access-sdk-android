@@ -54,7 +54,7 @@ allprojects {
 
         leakcanaryVersion = '1.6.3'
         butterknifeVersion = '10.0.0'
-        daggerVersion = '2.21'
+        daggerVersion = '2.19'
 
         junitVersion = '4.12'
         mockitoVersion = '2.15.0'

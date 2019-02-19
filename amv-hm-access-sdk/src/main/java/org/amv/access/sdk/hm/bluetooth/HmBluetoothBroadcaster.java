@@ -3,6 +3,7 @@ package org.amv.access.sdk.hm.bluetooth;
 
 import android.util.Log;
 
+import com.google.common.collect.ImmutableList;
 import com.highmobility.crypto.AccessCertificate;
 import com.highmobility.hmkit.BroadcastConfiguration;
 import com.highmobility.hmkit.Broadcaster;
@@ -18,6 +19,8 @@ import org.amv.access.sdk.spi.bluetooth.impl.SimpleBroadcastStateChangeEvent;
 import org.amv.access.sdk.spi.certificate.AccessCertificatePair;
 import org.amv.access.sdk.spi.communication.CommandFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.Observable;
@@ -43,6 +46,7 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     private final AtomicReference<ConnectedLink> connectedLinkRef = new AtomicReference<>();
     private final AtomicReference<BluetoothConnection> bluetoothConnectionRef = new AtomicReference<>();
+    private final AtomicReference<AccessCertificatePair> currentAccessCertificatePair = new AtomicReference<>();
 
     public HmBluetoothBroadcaster(CommandFactory commandFactory, Broadcaster broadcaster) {
         this.commandFactory = checkNotNull(commandFactory);
@@ -64,32 +68,22 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
             Log.d(TAG, "startConnecting");
 
             stopBroadcasting();
+            disconnectAllLinks();
+
+            registerCertificates(accessCertificatePair);
 
             AccessCertificate deviceAccessCertificate = new AccessCertificate(
                     new Bytes(accessCertificatePair.getDeviceAccessCertificate().toByteArray())
             );
-            AccessCertificate vehicleAccessCertificate = new AccessCertificate(
-                    new Bytes(accessCertificatePair.getVehicleAccessCertificate().toByteArray())
-            );
 
-            Log.d(TAG, "register access certificates");
-
-            if (this.broadcaster.registerCertificate(deviceAccessCertificate) != Result.SUCCESS) {
-                throw new IllegalStateException("Failed to register certificate to HMKit");
-            }
-
-            if (this.broadcaster.storeCertificate(vehicleAccessCertificate) != Result.SUCCESS) {
-                throw new IllegalStateException("Failed to store certificate to HMKit");
-            }
-
-            this.broadcaster.setListener(new HmBroadcasterListener());
+            broadcaster.setListener(new HmBroadcasterListener());
 
             BroadcastConfiguration broadcastConfig = new BroadcastConfiguration.Builder()
                     .setBroadcastingTarget(deviceAccessCertificate.getGainerSerial())
                     .build();
 
             Log.d(TAG, "start broadcasting");
-            this.broadcaster.startBroadcasting(new Broadcaster.StartCallback() {
+            broadcaster.startBroadcasting(new Broadcaster.StartCallback() {
                 @Override
                 public void onBroadcastingStarted() {
                     Log.d(TAG, "broadcasting started");
@@ -118,20 +112,24 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     @Override
     public Observable<BroadcastStateChangeEvent> observeBroadcastStateChanges() {
-        return this.broadcasterStateSubject.share()
+        return broadcasterStateSubject.share()
                 .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<BluetoothConnectionEvent> observeConnections() {
-        return this.connectionSubject.share()
+        return connectionSubject.share()
                 .subscribeOn(AmvSdkSchedulers.defaultScheduler());
     }
 
     @Override
     public Observable<Boolean> terminate() {
         return Observable.fromCallable(() -> {
+            Log.d(TAG, "terminate");
+            currentAccessCertificatePair.set(null);
+
             stopBroadcasting();
+            disconnectAllLinks();
             closeStreamsIfNecessary();
             return true;
         }).subscribeOn(AmvSdkSchedulers.defaultScheduler());
@@ -148,8 +146,8 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     private void stopBroadcasting() {
         Log.d(TAG, "stop broadcasting");
-        this.broadcaster.stopAlivePinging();
-        this.broadcaster.stopBroadcasting();
+        broadcaster.stopAlivePinging();
+        broadcaster.stopBroadcasting();
     }
 
     private boolean isActiveConnection(ConnectedLink connectedLink) {
@@ -158,6 +156,70 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
     private boolean isConnectionEstablished() {
         return connectedLinkRef.get() != null;
+    }
+
+    private void disconnectAllLinks() {
+        Log.d(TAG, "disconnectAllLinks");
+
+        ConnectedLink connectedLink = connectedLinkRef.getAndSet(null);
+        if (connectedLink != null) {
+            connectedLink.setListener(null);
+        }
+
+        BluetoothConnection currentConnection = bluetoothConnectionRef.getAndSet(null);
+        if (currentConnection != null) {
+            connectionSubject.onNext(BluetoothConnectionEvent.disconnected(currentConnection));
+        }
+
+        broadcaster.disconnectAllLinks();
+    }
+
+    private void registerCertificates(AccessCertificatePair accessCertificatePair) {
+        currentAccessCertificatePair.set(accessCertificatePair);
+        reregisterCurrentCertificates();
+    }
+
+    private void reregisterCurrentCertificates() {
+        AccessCertificatePair accessCertificatePair = currentAccessCertificatePair.get();
+        if (accessCertificatePair == null) {
+            return;
+        }
+
+        cleanupRegisteredCertificates();
+
+        AccessCertificate deviceAccessCertificate = new AccessCertificate(
+                new Bytes(accessCertificatePair.getDeviceAccessCertificate().toByteArray())
+        );
+        AccessCertificate vehicleAccessCertificate = new AccessCertificate(
+                new Bytes(accessCertificatePair.getVehicleAccessCertificate().toByteArray())
+        );
+
+        Log.d(TAG, "register device certificate " + deviceAccessCertificate.getGainerSerial().getHex());
+        if (broadcaster.registerCertificate(deviceAccessCertificate) != Result.SUCCESS) {
+            throw new IllegalStateException("Failed to register certificate to HMKit");
+        }
+
+        Log.d(TAG, "register vehicle certificate " + vehicleAccessCertificate.getGainerSerial().getHex());
+        if (broadcaster.storeCertificate(vehicleAccessCertificate) != Result.SUCCESS) {
+            throw new IllegalStateException("Failed to store certificate to HMKit");
+        }
+    }
+
+    private void cleanupRegisteredCertificates() {
+        Log.d(TAG, "cleanup access certificates");
+        for (AccessCertificate knownCertificate : findAllKnownCertificates()) {
+            this.broadcaster.revokeCertificate(knownCertificate.getGainerSerial());
+            this.broadcaster.revokeCertificate(knownCertificate.getProviderSerial());
+        }
+    }
+
+    private List<AccessCertificate> findAllKnownCertificates() {
+        ImmutableList<AccessCertificate> knownCertificates = ImmutableList.<AccessCertificate>builder()
+                .addAll(Arrays.asList(this.broadcaster.getRegisteredCertificates()))
+                .addAll(Arrays.asList(this.broadcaster.getStoredCertificates()))
+                .build();
+
+        return knownCertificates;
     }
 
     private class HmBroadcasterListener implements BroadcasterListener {
@@ -190,6 +252,9 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
         @Override
         public void onLinkLost(ConnectedLink connectedLink) {
+            // needed, as hmcore deletes certs on successful authenticated connection
+            reregisterCurrentCertificates();
+
             if (!isActiveConnection(connectedLink)) {
                 Log.d(TAG, "unknown connection lost");
                 return;
@@ -199,9 +264,11 @@ public class HmBluetoothBroadcaster implements BluetoothBroadcaster {
 
             connectedLink.setListener(null);
             connectedLinkRef.set(null);
-            BluetoothConnection currentConnection = bluetoothConnectionRef.getAndSet(null);
 
-            connectionSubject.onNext(BluetoothConnectionEvent.disconnected(currentConnection));
+            BluetoothConnection currentConnection = bluetoothConnectionRef.getAndSet(null);
+            if (currentConnection != null) {
+                connectionSubject.onNext(BluetoothConnectionEvent.disconnected(currentConnection));
+            }
         }
     }
 }
