@@ -43,20 +43,18 @@ allprojects {
         versionName = '1.1'
 
         amvAccessClientVersion = '0.12.0'
-        //hmkitVersion = '1.0.13'
-        // hmAutoApiVersion = '1.0.4'
         hmkitVersion = '1.6.4@aar'
         hmAutoApiVersion = '1.7.3'
 
         guavaVersion = '27.0.1-android'
-        rxAndroidVersion = '2.0.2'
+        rxAndroidVersion = '2.1.1'
         rxJavaVersion = '2.1.12'
         concealVersion = '2.0.2@aar'
         lombokVersion = '1.16.20'
 
-        leakcanaryVersion = '1.5.4'
+        leakcanaryVersion = '1.6.3'
         butterknifeVersion = '10.0.0'
-        daggerVersion = '2.16'
+        daggerVersion = '2.21'
 
         junitVersion = '4.12'
         mockitoVersion = '2.15.0'
